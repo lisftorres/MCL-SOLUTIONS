@@ -1,0 +1,8 @@
+{
+  "name": " MCL SOLUTIONS",
+  "description": "Solution complète de maintenance technique pour les espaces sportifs et salles de fitness. Gestion centralisée des interventions, vérifications réglementaires et suivi des prestataires.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
