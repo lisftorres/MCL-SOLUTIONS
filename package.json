@@ -1,7 +1,7 @@
 {
   "name": "mcl-solutions",
   "version": "1.0.0",
-  "description": "Application de maintenance MCL SOLUTIONS",
+  "description": "Solution de maintenance technique MCL Solutions",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

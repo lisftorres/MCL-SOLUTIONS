@@ -12,4 +12,4 @@ root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
-);https://ihjgihivlvmcjonkbzbf.supabase.co/rest/v1/messages
+);

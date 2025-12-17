@@ -1,7 +1,5 @@
-
-
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Ticket, PeriodicCheck, TicketStatus, CheckStatus, Club, Urgency, MaintenanceEvent, User, UserRole } from '../types';
 import { AlertTriangle, CheckCircle, Clock, AlertOctagon, MapPin, BellRing, Calendar, ChevronRight } from 'lucide-react';
 
@@ -15,8 +13,6 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenanceEvents = [], currentUser }) => {
   
-  // Filtering based on User Permissions
-  // MODIFICATION: Technicians also see ALL clubs, like Admins.
   const allowedClubs = (currentUser?.role === UserRole.ADMIN || currentUser?.role === UserRole.TECHNICIAN)
     ? clubs 
     : clubs.filter(c => currentUser?.clubIds.includes(c.id));
@@ -27,8 +23,6 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
   const filteredChecks = checks.filter(c => allowedClubIds.includes(c.clubId));
   const filteredEvents = maintenanceEvents.filter(m => !m.clubId || allowedClubIds.includes(m.clubId));
 
-  // Stats Calculation
-  // EXCLUSION STRICTE DES TICKETS 'ANNULÉ'
   const validTickets = filteredTickets.filter(t => t.status !== TicketStatus.CANCELLED);
   
   const openTickets = validTickets.filter(t => t.status === TicketStatus.OPEN).length;
@@ -36,7 +30,6 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
   const lateChecks = filteredChecks.filter(c => c.status === CheckStatus.LATE || c.status === CheckStatus.WARNING_WEEK).length;
   const resolvedTickets = validTickets.filter(t => t.status === TicketStatus.RESOLVED).length;
 
-  // Filter Active Maintenance Reminders (Future or Today)
   const activeReminders = filteredEvents.filter(m => {
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -44,27 +37,16 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
     return m.notifyOnDashboard && eventDate >= today;
   });
 
-  // Filter Periodic Check Alerts (Late, Warning Week, Warning Month)
   const alertChecks = filteredChecks.filter(c => 
     [CheckStatus.LATE, CheckStatus.WARNING_WEEK, CheckStatus.WARNING_MONTH].includes(c.status)
   ).sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());
 
-  // Chart Data - Status (Using validTickets to exclude cancelled)
   const ticketStatusData = [
     { name: 'Ouvert', value: openTickets, color: '#EF4444' },
     { name: 'En Cours', value: validTickets.filter(t => t.status === TicketStatus.IN_PROGRESS).length, color: '#F59E0B' },
     { name: 'Résolu', value: resolvedTickets, color: '#10B981' },
   ];
 
-  // Chart Data - Periodic Checks
-  const checksData = [
-    { name: 'À venir', value: filteredChecks.filter(c => c.status === CheckStatus.UPCOMING).length },
-    { name: 'Alerte', value: filteredChecks.filter(c => c.status.includes('ALERTE')).length },
-    { name: 'Retard', value: filteredChecks.filter(c => c.status === CheckStatus.LATE).length },
-    { name: 'Terminé', value: filteredChecks.filter(c => c.status === CheckStatus.COMPLETED).length },
-  ];
-
-  // Chart Data - Trades Distribution (Top 5)
   const tradeCounts: Record<string, number> = {};
   validTickets.forEach(ticket => {
     tradeCounts[ticket.trade] = (tradeCounts[ticket.trade] || 0) + 1;
@@ -73,15 +55,14 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
   const tradeData = Object.entries(tradeCounts)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
-    .slice(0, 5); // Top 5
+    .slice(0, 5);
 
-  // Recent Tickets (Top 5) - Exclude Cancelled
   const recentTickets = [...validTickets]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
   const StatCard = ({ title, value, icon: Icon, color, subtext }: any) => (
-    <div className="bg-gym-light p-6 rounded-xl shadow-lg border-l-4" style={{ borderColor: color }}>
+    <div className="bg-brand-light p-6 rounded-xl shadow-lg border-l-4" style={{ borderColor: color }}>
       <div className="flex justify-between items-start">
         <div>
           <p className="text-gray-300 text-sm uppercase tracking-wide">{title}</p>
@@ -100,6 +81,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
       case TicketStatus.OPEN: return <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-1 rounded text-xs">Ouvert</span>;
       case TicketStatus.IN_PROGRESS: return <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2 py-1 rounded text-xs">En cours</span>;
       case TicketStatus.RESOLVED: return <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-1 rounded text-xs">Résolu</span>;
+      default: return null;
     }
   };
 
@@ -125,7 +107,6 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
     <div className="space-y-6 animate-fade-in pb-10">
       
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Maintenance Reminders */}
         {activeReminders.length > 0 && (
           <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4 flex flex-col items-start gap-4 shadow-lg">
             <div className="flex items-center gap-3 mb-2">
@@ -136,7 +117,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
             </div>
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3">
               {activeReminders.map(event => (
-                <div key={event.id} className="bg-gym-dark/50 p-3 rounded border border-purple-500/20 flex items-center gap-3 hover:bg-gym-dark transition">
+                <div key={event.id} className="bg-brand-dark/50 p-3 rounded border border-purple-500/20 flex items-center gap-3 hover:bg-brand-dark transition">
                   <Calendar size={18} className="text-purple-400 shrink-0" />
                   <div className="overflow-hidden">
                     <p className="font-semibold text-sm text-white truncate">{event.title}</p>
@@ -148,7 +129,6 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
           </div>
         )}
 
-        {/* Periodic Check Alerts */}
         {alertChecks.length > 0 && (
           <div className="bg-orange-900/10 border border-orange-500/30 rounded-xl p-4 flex flex-col items-start gap-4 shadow-lg">
              <div className="flex items-center gap-3 mb-2">
@@ -162,7 +142,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
                 const style = getCheckAlertStyle(check.status);
                 const CheckIcon = style.icon;
                 return (
-                  <div key={check.id} className={`bg-gym-dark/50 p-3 rounded border-l-4 ${style.borderColor} flex justify-between items-center gap-2 hover:bg-gym-dark transition`}>
+                  <div key={check.id} className={`bg-brand-dark/50 p-3 rounded border-l-4 ${style.borderColor} flex justify-between items-center gap-2 hover:bg-brand-dark transition`}>
                     <div className="overflow-hidden">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${style.bgColor} ${style.textColor}`}>
@@ -182,12 +162,11 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
         )}
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Tickets Ouverts" 
           value={openTickets} 
-          icon={AlertCircle} 
+          icon={AlertTriangle} 
           color="#EF4444" 
           subtext="Total"
         />
@@ -215,8 +194,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ticket Status */}
-        <div className="bg-gym-light p-6 rounded-xl shadow-lg">
+        <div className="bg-brand-light p-6 rounded-xl shadow-lg">
           <h3 className="text-lg font-bold text-white mb-4">État des Tickets</h3>
           <div className="h-64">
              <ResponsiveContainer width="100%" height="100%">
@@ -248,8 +226,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
           </div>
         </div>
 
-        {/* Trade Distribution Chart */}
-        <div className="bg-gym-light p-6 rounded-xl shadow-lg">
+        <div className="bg-brand-light p-6 rounded-xl shadow-lg">
           <h3 className="text-lg font-bold text-white mb-4">Top 5 Interventions par Métier</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -268,18 +245,17 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
         </div>
       </div>
 
-      {/* Recent Tickets Table */}
-      <div className="bg-gym-light rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+      <div className="bg-brand-light rounded-xl shadow-lg border border-gray-700 overflow-hidden">
         <div className="p-6 border-b border-gray-700 flex justify-between items-center">
             <h3 className="text-lg font-bold text-white">Derniers Tickets Signalés</h3>
-            <button className="text-sm text-gym-yellow hover:underline flex items-center gap-1">
+            <button className="text-sm text-brand-yellow hover:underline flex items-center gap-1">
               Voir tout <ChevronRight size={14} />
             </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gym-darker text-gray-400 text-xs uppercase tracking-wider">
+              <tr className="bg-brand-darker text-gray-400 text-xs uppercase tracking-wider">
                 <th className="p-4 font-semibold">Urg.</th>
                 <th className="p-4 font-semibold">Métier / Description</th>
                 <th className="p-4 font-semibold">Lieu</th>
@@ -301,7 +277,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
                     </td>
                     <td className="p-4 text-sm text-gray-300">
                       <div className="flex items-center gap-1">
-                        <MapPin size={12} className="text-gym-yellow"/>
+                        <MapPin size={12} className="text-brand-yellow"/>
                         <span>{clubName}</span>
                       </div>
                       <span className="text-xs text-gray-500 pl-4 block">{ticket.space}</span>
@@ -327,8 +303,5 @@ const Dashboard: React.FC<DashboardProps> = ({ tickets, checks, clubs, maintenan
     </div>
   );
 };
-
-// Simple icon wrapper to fix Lucide import issue in StatCard
-const AlertCircle = (props: any) => <AlertTriangle {...props} />;
 
 export default Dashboard;
