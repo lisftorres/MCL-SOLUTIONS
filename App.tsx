@@ -160,22 +160,12 @@ const App: React.FC = () => {
   const handleCreateTicket = async (newTicketData: Partial<Ticket>) => {
     if (!currentUser) return;
     const history = [{ date: new Date().toISOString(), user: currentUser.name, action: 'CREATION', details: 'Ticket créé' }];
-    
     if (!supabase) {
         const demoTicket = { ...newTicketData, id: `demo_${Date.now()}`, createdAt: new Date().toISOString(), status: TicketStatus.OPEN, deleted: false, history } as Ticket;
         setTickets(prev => [demoTicket, ...prev]);
         return;
     }
-    try {
-        await supabase.from('tickets').insert([{ 
-            ...newTicketData, 
-            createdAt: new Date().toISOString(), 
-            images: newTicketData.images || [], 
-            status: TicketStatus.OPEN, 
-            deleted: false, 
-            history 
-        }]);
-    } catch (e) { console.error(e); }
+    try { await supabase.from('tickets').insert([{ ...newTicketData, createdAt: new Date().toISOString(), images: newTicketData.images || [], status: TicketStatus.OPEN, deleted: false, history }]); } catch (e) { console.error(e); }
   };
 
   const handleEditTicket = async (updatedTicketData: Ticket) => {
@@ -193,47 +183,28 @@ const App: React.FC = () => {
 
   const handleDeleteTicket = async (ticketId: string) => {
     if (!currentUser) return;
-    const ticket = tickets.find(t => t.id === ticketId);
-    if (!ticket) return;
-
     if (!supabase) {
         setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, deleted: true, status: TicketStatus.CANCELLED } : t));
         return;
     }
-    try {
-        const newHistory = [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'DELETION', details: 'Mis à la corbeille' }];
-        await supabase.from('tickets').update({ deleted: true, status: TicketStatus.CANCELLED, history: newHistory }).eq('id', ticketId);
-    } catch (e) { console.error(e); }
+    try { await supabase.from('tickets').update({ deleted: true, status: TicketStatus.CANCELLED }).eq('id', ticketId); } catch (e) { console.error(e); }
   };
 
   const handleUpdateTicketStatus = async (id: string, status: TicketStatus) => {
     if (!currentUser) return;
-    const ticket = tickets.find(t => t.id === id);
-    if (!ticket) return;
-
     if (!supabase) {
         setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
         return;
     }
-    try {
-        const newHistory = [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'STATUS_CHANGE', details: `Statut: ${status}` }];
-        await supabase.from('tickets').update({ status, history: newHistory }).eq('id', id);
-    } catch (e) { console.error(e); }
+    try { await supabase.from('tickets').update({ status }).eq('id', id); } catch (e) { console.error(e); }
   };
 
   const handleRestoreTicket = async (id: string) => {
-    if (!currentUser) return;
-    const ticket = tickets.find(t => t.id === id);
-    if (!ticket) return;
-
     if (!supabase) {
         setTickets(prev => prev.map(t => t.id === id ? { ...t, deleted: false, status: TicketStatus.OPEN } : t));
         return;
     }
-    try { 
-        const newHistory = [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'RESTORATION', details: 'Restauré depuis la corbeille' }];
-        await supabase.from('tickets').update({ deleted: false, status: TicketStatus.OPEN, history: newHistory }).eq('id', id); 
-    } catch (e) { console.error(e); }
+    try { await supabase.from('tickets').update({ deleted: false, status: TicketStatus.OPEN }).eq('id', id); } catch (e) { console.error(e); }
   };
 
   const handlePermanentDeleteTicket = async (id: string) => { 
@@ -257,6 +228,14 @@ const App: React.FC = () => {
         return;
     }
     try { await supabase.from('checks').update({ checklistItems: items, status }).eq('id', id); } catch (e) { console.error(e); } 
+  };
+
+  const handleEditCheck = async (updated: PeriodicCheck) => {
+    if (!supabase) {
+        setChecks(prev => prev.map(c => c.id === updated.id ? updated : c));
+        return;
+    }
+    try { const { id, ...data } = updated; await supabase.from('checks').update(data).eq('id', id); } catch (e) { console.error(e); }
   };
 
   const handleDeleteCheck = async (id: string) => { 
@@ -289,10 +268,7 @@ const App: React.FC = () => {
       setMaintenanceEvents(prev => prev.map(m => m.id === event.id ? event : m));
       return;
     }
-    try {
-      const { id, ...data } = event;
-      await supabase.from('maintenance').update(data).eq('id', id);
-    } catch (e) { console.error(e); }
+    try { const { id, ...data } = event; await supabase.from('maintenance').update(data).eq('id', id); } catch (e) { console.error(e); }
   };
 
   const handleDeleteMaintenanceEvent = async (id: string) => {
@@ -312,10 +288,7 @@ const App: React.FC = () => {
   };
 
   const handlePermanentDeleteMaintenance = async (id: string) => {
-    if (!supabase) {
-      setMaintenanceEvents(prev => prev.filter(m => m.id !== id));
-      return;
-    }
+    if (!supabase) { setMaintenanceEvents(prev => prev.filter(m => m.id !== id)); return; }
     try { await supabase.from('maintenance').delete().eq('id', id); } catch (e) { console.error(e); }
   };
 
@@ -360,17 +333,39 @@ const App: React.FC = () => {
     try { await supabase.from('documents').delete().eq('id', id); } catch (e) { console.error(e); } 
   };
 
-  // --- AUTRES GESTIONS ---
+  // --- GESTION DES ARTISANS ---
   const handleAddArtisan = async (artisan: Partial<Artisan>) => { 
     if (!supabase) { const demo = { ...artisan, id: `demo_${Date.now()}` } as Artisan; setArtisans(prev => [demo, ...prev]); return; }
-    await supabase.from('artisans').insert([artisan]); 
+    try { await supabase.from('artisans').insert([artisan]); } catch (e) { console.error(e); }
   };
 
+  const handleEditArtisan = async (updated: Artisan) => {
+    if (!supabase) { setArtisans(prev => prev.map(a => a.id === updated.id ? updated : a)); return; }
+    try { const { id, ...data } = updated; await supabase.from('artisans').update(data).eq('id', id); } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteArtisan = async (id: string) => {
+    if (!supabase) { setArtisans(prev => prev.filter(a => a.id !== id)); return; }
+    try { await supabase.from('artisans').delete().eq('id', id); } catch (e) { console.error(e); }
+  };
+
+  // --- GESTION DES SPECIFICATIONS ---
   const handleAddSpecification = async (spec: Partial<Specification>) => { 
     if (!supabase) { const demo = { ...spec, id: `demo_${Date.now()}` } as Specification; setSpecifications(prev => [demo, ...prev]); return; }
-    await supabase.from('specifications').insert([spec]); 
+    try { await supabase.from('specifications').insert([spec]); } catch (e) { console.error(e); }
   };
 
+  const handleEditSpecification = async (updated: Specification) => {
+    if (!supabase) { setSpecifications(prev => prev.map(s => s.id === updated.id ? updated : s)); return; }
+    try { const { id, ...data } = updated; await supabase.from('specifications').update(data).eq('id', id); } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteSpecification = async (id: string) => {
+    if (!supabase) { setSpecifications(prev => prev.filter(s => s.id !== id)); return; }
+    try { await supabase.from('specifications').delete().eq('id', id); } catch (e) { console.error(e); }
+  };
+
+  // --- GESTION DES UTILISATEURS ---
   const handleAddUser = async (user: Partial<User>, password?: string) => { 
     if (!supabase) {
         const demo = { ...user, id: `demo_${Date.now()}` } as User;
@@ -393,6 +388,24 @@ const App: React.FC = () => {
     } catch (e) { console.error(e); } 
   };
 
+  const handleEditUser = async (updated: User, password?: string) => {
+    if (!supabase) {
+        setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+        if (password) setUserPasswords(prev => ({ ...prev, [updated.id]: password }));
+        return;
+    }
+    try { 
+        const { id, ...data } = updated; 
+        await supabase.from('users').update(data).eq('id', id); 
+        if (password) setUserPasswords(prev => ({ ...prev, [id]: password }));
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (!supabase) { setUsers(prev => prev.filter(u => u.id !== id)); return; }
+    try { await supabase.from('users').delete().eq('id', id); } catch (e) { console.error(e); }
+  };
+
   const handleMarkNotificationAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const handleMarkAllNotificationsAsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
@@ -406,13 +419,13 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard tickets={activeTickets} checks={activeChecks} clubs={clubs} maintenanceEvents={activeMaintenance} currentUser={currentUser} />;
       case 'tickets': return <TicketManager tickets={activeTickets} clubs={clubs} users={users} currentUser={currentUser} failureTypes={failureTypes} onCreateTicket={handleCreateTicket} onEditTicket={handleEditTicket} onDeleteTicket={handleDeleteTicket} onUpdateStatus={handleUpdateTicketStatus} />;
-      case 'checks': return <CheckManager checks={activeChecks} clubs={clubs} user={currentUser} onUpdateCheck={handleUpdateCheck} onCreateCheck={handleCreateCheck} onEditCheck={(c) => {}} onDeleteCheck={handleDeleteCheck} />;
-      case 'specs': return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={handleAddSpecification} onDeleteSpecification={(id) => {}} onEditSpecification={(s) => {}} />;
+      case 'checks': return <CheckManager checks={activeChecks} clubs={clubs} user={currentUser} onUpdateCheck={handleUpdateCheck} onCreateCheck={handleCreateCheck} onEditCheck={handleEditCheck} onDeleteCheck={handleDeleteCheck} />;
+      case 'specs': return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={handleAddSpecification} onDeleteSpecification={handleDeleteSpecification} onEditSpecification={handleEditSpecification} />;
       case 'planning': return <GeneralPlanning events={activePlanning} currentUser={currentUser} onAddEvent={handleAddPlanningEvent} onEditEvent={handleEditPlanningEvent} onDeleteEvent={handleDeletePlanningEvent} />;
       case 'documents': return <DocumentManager documents={docs.filter(d => d.type !== 'QUOTE' && d.type !== 'INVOICE')} clubs={clubs} currentUser={currentUser} onAddDocument={handleAddDocument} onDeleteDocument={handleDeleteDocument} />;
       case 'financial': return <FinancialManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={handleAddDocument} onDeleteDocument={handleDeleteDocument} />;
-      case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={handleAddArtisan} onDeleteArtisan={(id) => {}} onEditArtisan={(a) => {}} />;
-      case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={handleAddUser} onEditUser={(u, p) => {}} onDeleteUser={(id) => {}} />;
+      case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={handleAddArtisan} onDeleteArtisan={handleDeleteArtisan} onEditArtisan={handleEditArtisan} />;
+      case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={handleAddUser} onEditUser={handleEditUser} onDeleteUser={handleDeleteUser} />;
       case 'maintenance': return <MaintenanceSchedule tickets={activeTickets} checks={activeChecks} clubs={clubs} currentUser={currentUser} maintenanceEvents={activeMaintenance} onAddEvent={handleAddMaintenanceEvent} onEditEvent={handleEditMaintenanceEvent} onDeleteEvent={handleDeleteMaintenanceEvent} />;
       case 'recycle_bin': return <RecycleBin deletedTickets={tickets.filter(t => t.deleted)} deletedChecks={checks.filter(c => c.deleted)} deletedMaintenance={maintenanceEvents.filter(m => m.deleted)} deletedPlanning={planningEvents.filter(p => p.deleted)} currentUser={currentUser} onRestoreTicket={handleRestoreTicket} onRestoreCheck={handleRestoreCheck} onRestoreMaintenance={handleRestoreMaintenance} onRestorePlanning={handleRestorePlanningEvent} onPermanentDeleteTicket={handlePermanentDeleteTicket} onPermanentDeleteCheck={handlePermanentDeleteCheck} onPermanentDeleteMaintenance={handlePermanentDeleteMaintenance} onPermanentDeletePlanning={handlePermanentDeletePlanningEvent} />;
       default: return <Dashboard tickets={activeTickets} checks={activeChecks} clubs={clubs} currentUser={currentUser} />;
