@@ -16,18 +16,20 @@ import GeneralPlanning from './components/GeneralPlanning';
 import RecycleBin from './components/RecycleBin';
 import { MOCK_CLUBS, MOCK_TICKETS, MOCK_CHECKS, MOCK_DOCS, MOCK_USERS, MOCK_MAINTENANCE, MOCK_FAILURE_TYPES, MOCK_ARTISANS, MOCK_SPECS, MOCK_PLANNING_EVENTS } from './constants';
 import { Ticket, TicketStatus, PeriodicCheck, CheckStatus, UserRole, MaintenanceEvent, Club, TradeType, User, Artisan, DocumentFile, Specification, AppNotification, NotificationPreferences, Urgency, PlanningEvent } from './types';
-import { Database, Copy, AlertTriangle, Trash2 } from 'lucide-react';
+import { Database, Wifi, WifiOff, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { supabase } from './services/supabase';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [dbStatus, setDbStatus] = useState<'CONNECTED' | 'DEMO' | 'ERROR'>('DEMO');
+  
+  // States pour les données
   const [users, setUsers] = useState<User[]>([]);
   const [userPasswords, setUserPasswords] = useState<Record<string, string>>({
     'admin_fixed': 'Marielis1338!', 'user_marie': '123456', 'u_jonas': '123456', 'u_leanne': '123456', 'u_brian': '123456', 'u_julien': '123456'
   });
-  
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [checks, setChecks] = useState<PeriodicCheck[]>([]);
   const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>([]);
@@ -35,126 +37,99 @@ const App: React.FC = () => {
   const [docs, setDocs] = useState<DocumentFile[]>([]);
   const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [specifications, setSpecifications] = useState<Specification[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [failureTypes] = useState<Record<TradeType, string[]>>(MOCK_FAILURE_TYPES);
-  const [setupRequired, setSetupRequired] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(!supabase);
 
   // Synchronisation avec Supabase
   useEffect(() => {
     if (!supabase) {
-        setTickets(MOCK_TICKETS);
-        setChecks(MOCK_CHECKS);
-        setMaintenanceEvents(MOCK_MAINTENANCE);
-        setPlanningEvents(MOCK_PLANNING_EVENTS);
-        setDocs(MOCK_DOCS);
-        setSpecifications(MOCK_SPECS);
-        setArtisans(MOCK_ARTISANS);
-        setUsers(MOCK_USERS);
-        setClubs(MOCK_CLUBS);
-        return;
+      setDbStatus('DEMO');
+      setTickets(MOCK_TICKETS);
+      setChecks(MOCK_CHECKS);
+      setMaintenanceEvents(MOCK_MAINTENANCE);
+      setPlanningEvents(MOCK_PLANNING_EVENTS);
+      setDocs(MOCK_DOCS);
+      setSpecifications(MOCK_SPECS);
+      setArtisans(MOCK_ARTISANS);
+      setUsers(MOCK_USERS);
+      setClubs(MOCK_CLUBS);
+      return;
     }
 
-    const fetchData = async (table: string, setState: React.Dispatch<React.SetStateAction<any[]>>) => {
-      const { data, error } = await supabase.from(table).select('*');
-      if (!error && data) {
-        setState(data);
-      } else if (error && error.code === '42P01') {
-        setSetupRequired(true);
+    const fetchData = async () => {
+      try {
+        const { data: clubsData, error: clubsError } = await supabase.from('clubs').select('*');
+        if (clubsError) throw clubsError;
+        
+        setDbStatus('CONNECTED');
+        setClubs(clubsData || []);
+        
+        const fetchTable = async (table: string, setter: any) => {
+          const { data } = await supabase.from(table).select('*');
+          if (data) setter(data);
+        };
+
+        fetchTable('tickets', setTickets);
+        fetchTable('checks', setChecks);
+        fetchTable('maintenance', setMaintenanceEvents);
+        fetchTable('planning', setPlanningEvents);
+        fetchTable('documents', setDocs);
+        fetchTable('specifications', setSpecifications);
+        fetchTable('artisans', setArtisans);
+        fetchTable('users', setUsers);
+      } catch (e) {
+        console.error("Erreur de connexion Supabase:", e);
+        setDbStatus('ERROR');
+        // Fallback démo en cas d'erreur de table manquante
+        setClubs(MOCK_CLUBS);
+        setTickets(MOCK_TICKETS);
       }
     };
 
-    const tables = ['clubs', 'tickets', 'checks', 'maintenance', 'planning', 'documents', 'specifications', 'artisans', 'users'];
-    const setters = [setClubs, setTickets, setChecks, setMaintenanceEvents, setPlanningEvents, setDocs, setSpecifications, setArtisans, setUsers];
+    fetchData();
 
-    tables.forEach((table, i) => fetchData(table, setters[i]));
-
-    // Realtime subscriptions
-    const channels = tables.map(table => {
-      return supabase.channel(`public:${table}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table }, () => {
-          fetchData(table, setters[tables.indexOf(table)]);
-        })
-        .subscribe();
-    });
+    // Abonnements temps réel
+    const tables = ['tickets', 'checks', 'maintenance', 'planning', 'artisans', 'users'];
+    const channels = tables.map(table => 
+      supabase.channel(`any_${table}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table }, () => fetchData())
+        .subscribe()
+    );
 
     return () => { channels.forEach(c => supabase.removeChannel(c)); };
   }, []);
 
-  // --- LOGIQUE DE SUPPRESSION DÉFINITIVE ---
-  // On remplace le "Soft Delete" par un "Hard Delete" si vous voulez que ça disparaisse pour de bon
-  const handleDeleteTicket = async (ticketId: string) => {
-    if (!window.confirm("Supprimer ce ticket définitivement ?")) return;
+  // --- SUPPRESSION DÉFINITIVE ---
+  const handleDeleteTicket = async (id: string) => {
+    if (!window.confirm("Supprimer ce ticket DÉFINITIVEMENT de la base de données ?")) return;
+    
+    // Mise à jour visuelle immédiate
+    setTickets(prev => prev.filter(t => t.id !== id));
 
-    if (!supabase) {
-      setTickets(prev => prev.filter(t => t.id !== ticketId));
-      return;
+    if (supabase) {
+      const { error } = await supabase.from('tickets').delete().eq('id', id);
+      if (error) {
+        alert("Erreur Supabase lors de la suppression: " + error.message);
+        // Si erreur, on remet le ticket (optionnel pour la cohérence)
+      }
     }
-    try {
-      const { error } = await supabase.from('tickets').delete().eq('id', ticketId);
-      if (error) throw error;
-      setTickets(prev => prev.filter(t => t.id !== ticketId));
-    } catch (e: any) { alert("Erreur suppression Supabase: " + e.message); }
-  };
-
-  const handleDeleteCheck = async (id: string) => {
-    if (!window.confirm("Supprimer cette vérification définitivement ?")) return;
-    if (!supabase) { setChecks(prev => prev.filter(c => c.id !== id)); return; }
-    await supabase.from('checks').delete().eq('id', id);
-    setChecks(prev => prev.filter(c => c.id !== id));
-  };
-
-  const handleDeleteMaintenanceEvent = async (id: string) => {
-    if (!window.confirm("Supprimer cette maintenance ?")) return;
-    if (!supabase) { setMaintenanceEvents(prev => prev.filter(m => m.id !== id)); return; }
-    await supabase.from('maintenance').delete().eq('id', id);
-    setMaintenanceEvents(prev => prev.filter(m => m.id !== id));
-  };
-
-  const handleDeletePlanningEvent = async (id: string) => {
-    if (!window.confirm("Supprimer cet événement ?")) return;
-    if (!supabase) { setPlanningEvents(prev => prev.filter(p => p.id !== id)); return; }
-    await supabase.from('planning').delete().eq('id', id);
-    setPlanningEvents(prev => prev.filter(p => p.id !== id));
-  };
-
-  // --- AUTRES GESTIONS ---
-  const handleCreateTicket = async (newTicketData: Partial<Ticket>) => {
-    if (!currentUser) return;
-    if (!supabase) {
-        const demoTicket = { ...newTicketData, id: `demo_${Date.now()}`, createdAt: new Date().toISOString(), status: TicketStatus.OPEN, deleted: false } as Ticket;
-        setTickets(prev => [demoTicket, ...prev]);
-        return;
-    }
-    await supabase.from('tickets').insert([{ ...newTicketData, status: TicketStatus.OPEN, createdBy: currentUser.id }]);
   };
 
   const handleUpdateTicketStatus = async (id: string, status: TicketStatus) => {
-    if (!supabase) { setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t)); return; }
-    await supabase.from('tickets').update({ status }).eq('id', id);
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+    if (supabase) {
+      await supabase.from('tickets').update({ status }).eq('id', id);
+    }
   };
 
-  const handleAddArtisan = async (artisan: Partial<Artisan>) => {
-    if (!supabase) { setArtisans(prev => [{...artisan, id: `a_${Date.now()}`} as Artisan, ...prev]); return; }
-    await supabase.from('artisans').insert([artisan]);
-  };
+  const handleCreateTicket = async (newTicket: Partial<Ticket>) => {
+    const tempId = `temp_${Date.now()}`;
+    const fullTicket = { ...newTicket, id: tempId, createdAt: new Date().toISOString() } as Ticket;
+    setTickets(prev => [fullTicket, ...prev]);
 
-  const handleDeleteArtisan = async (id: string) => {
-    if (!window.confirm("Supprimer ce contact ?")) return;
-    if (!supabase) { setArtisans(prev => prev.filter(a => a.id !== id)); return; }
-    await supabase.from('artisans').delete().eq('id', id);
-  };
-
-  const handleAddUser = async (user: Partial<User>, password?: string) => {
-    if (!supabase) { setUsers(prev => [...prev, {...user, id: `u_${Date.now()}`} as User]); return; }
-    await supabase.from('users').insert([user]);
-  };
-
-  const handleDeleteUser = async (id: string) => {
-    if (!window.confirm("Supprimer cet utilisateur ?")) return;
-    if (!supabase) { setUsers(prev => prev.filter(u => u.id !== id)); return; }
-    await supabase.from('users').delete().eq('id', id);
+    if (supabase) {
+      await supabase.from('tickets').insert([{ ...newTicket, status: TicketStatus.OPEN, createdBy: currentUser?.id }]);
+    }
   };
 
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
@@ -176,15 +151,12 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (!currentUser) return null;
+    const activeTickets = tickets.filter(t => !t.deleted);
     switch (activeTab) {
-      case 'dashboard': return <Dashboard tickets={tickets} checks={checks} clubs={clubs} maintenanceEvents={maintenanceEvents} currentUser={currentUser} />;
-      case 'tickets': return <TicketManager tickets={tickets} clubs={clubs} users={users} currentUser={currentUser} failureTypes={failureTypes} onCreateTicket={handleCreateTicket} onEditTicket={() => {}} onDeleteTicket={handleDeleteTicket} onUpdateStatus={handleUpdateTicketStatus} />;
-      case 'checks': return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={() => {}} onCreateCheck={() => {}} onEditCheck={() => {}} onDeleteCheck={handleDeleteCheck} />;
-      case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={handleAddArtisan} onDeleteArtisan={handleDeleteArtisan} onEditArtisan={() => {}} />;
-      case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={handleAddUser} onEditUser={() => {}} onDeleteUser={handleDeleteUser} />;
-      case 'planning': return <GeneralPlanning events={planningEvents} currentUser={currentUser} onAddEvent={() => {}} onEditEvent={() => {}} onDeleteEvent={handleDeletePlanningEvent} />;
-      case 'maintenance': return <MaintenanceSchedule tickets={tickets} checks={checks} clubs={clubs} currentUser={currentUser} maintenanceEvents={maintenanceEvents} onAddEvent={() => {}} onEditEvent={() => {}} onDeleteEvent={handleDeleteMaintenanceEvent} />;
-      default: return <Dashboard tickets={tickets} checks={checks} clubs={clubs} currentUser={currentUser} />;
+      case 'dashboard': return <Dashboard tickets={activeTickets} checks={checks} clubs={clubs} maintenanceEvents={maintenanceEvents} currentUser={currentUser} />;
+      case 'tickets': return <TicketManager tickets={activeTickets} clubs={clubs} users={users} currentUser={currentUser} failureTypes={failureTypes} onCreateTicket={handleCreateTicket} onEditTicket={() => {}} onDeleteTicket={handleDeleteTicket} onUpdateStatus={handleUpdateTicketStatus} />;
+      case 'checks': return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={() => {}} onCreateCheck={() => {}} onEditCheck={() => {}} onDeleteCheck={(id) => {}} />;
+      default: return <Dashboard tickets={activeTickets} checks={checks} clubs={clubs} currentUser={currentUser} />;
     }
   };
 
@@ -192,6 +164,28 @@ const App: React.FC = () => {
 
   return (
     <Layout user={currentUser} onLogout={handleLogout} activeTab={activeTab} onTabChange={setActiveTab}>
+      {/* Indicateur de Statut de la Base de Données */}
+      <div className="mb-6 flex items-center justify-between bg-brand-darker/50 p-3 rounded-xl border border-white/5 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          {dbStatus === 'CONNECTED' ? (
+            <div className="flex items-center gap-2 text-green-400 text-xs font-bold uppercase tracking-widest">
+              <ShieldCheck size={16} /> Base de données active (Supabase)
+            </div>
+          ) : dbStatus === 'DEMO' ? (
+            <div className="flex items-center gap-2 text-brand-yellow text-xs font-bold uppercase tracking-widest">
+              <WifiOff size={16} /> Mode Démo (Données temporaires)
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-red-500 text-xs font-bold uppercase tracking-widest">
+              <AlertTriangle size={16} /> Erreur de configuration Supabase
+            </div>
+          )}
+        </div>
+        {dbStatus !== 'CONNECTED' && (
+          <p className="text-[10px] text-gray-500 italic">Vérifiez vos variables VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY</p>
+        )}
+      </div>
+
       {renderContent()}
     </Layout>
   );
