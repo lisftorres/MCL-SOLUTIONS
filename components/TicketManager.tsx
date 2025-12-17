@@ -38,10 +38,8 @@ const TicketManager: React.FC<TicketManagerProps> = ({
   );
   
   const [showModal, setShowModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentTicketId, setCurrentTicketId] = useState<string | null>(null);
-  const [selectedTicketForHistory, setSelectedTicketForHistory] = useState<Ticket | null>(null);
 
   const [ticketDesc, setTicketDesc] = useState('');
   const [ticketSpace, setTicketSpace] = useState('');
@@ -130,11 +128,6 @@ const TicketManager: React.FC<TicketManagerProps> = ({
     }
   };
 
-  const retakePhoto = () => {
-    setCapturedImage(null);
-    startCamera();
-  };
-
   useEffect(() => {
     return () => stopCamera();
   }, []);
@@ -169,23 +162,28 @@ const TicketManager: React.FC<TicketManagerProps> = ({
     setShowModal(true);
   };
 
-  const handleOpenHistory = (ticket: Ticket) => {
-    setSelectedTicketForHistory(ticket);
-    setShowHistoryModal(true);
-  };
-
-  const handleDelete = (e: React.MouseEvent, ticketId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (window.confirm("Envoyer ce ticket à la corbeille ?")) {
-      onDeleteTicket(ticketId);
+  const getStatusColor = (status: TicketStatus) => {
+    switch (status) {
+      case TicketStatus.OPEN: return 'bg-red-500 text-white border-red-600';
+      case TicketStatus.IN_PROGRESS: return 'bg-yellow-500 text-brand-dark border-yellow-600';
+      case TicketStatus.RESOLVED: return 'bg-green-500 text-white border-green-600';
+      case TicketStatus.CANCELLED: return 'bg-gray-500 text-white opacity-60';
     }
   };
 
-  const handleStatusUpdate = (e: React.MouseEvent, ticketId: string, status: TicketStatus) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onUpdateStatus(ticketId, status);
+  const getUrgencyBadge = (urgency: Urgency) => {
+     const styles = {
+       [Urgency.LOW]: 'text-gray-400',
+       [Urgency.MEDIUM]: 'text-yellow-600',
+       [Urgency.HIGH]: 'text-orange-600 font-bold',
+       [Urgency.CRITICAL]: 'text-red-600 font-bold animate-pulse'
+     };
+     return <span className={`text-[10px] uppercase font-black tracking-widest ${styles[urgency]}`}>{urgency}</span>;
+  };
+
+  const getCreatorName = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    return user ? user.name : "Inconnu";
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -215,32 +213,9 @@ const TicketManager: React.FC<TicketManagerProps> = ({
     setShowModal(false);
   };
 
-  const getStatusColor = (status: TicketStatus) => {
-    switch (status) {
-      case TicketStatus.OPEN: return 'bg-red-500 text-white border-red-600';
-      case TicketStatus.IN_PROGRESS: return 'bg-yellow-500 text-brand-dark border-yellow-600';
-      case TicketStatus.RESOLVED: return 'bg-green-500 text-white border-green-600';
-      case TicketStatus.CANCELLED: return 'bg-gray-500 text-white opacity-60';
-    }
-  };
-
-  const getUrgencyBadge = (urgency: Urgency) => {
-     const styles = {
-       [Urgency.LOW]: 'text-gray-400',
-       [Urgency.MEDIUM]: 'text-yellow-600',
-       [Urgency.HIGH]: 'text-orange-600 font-bold',
-       [Urgency.CRITICAL]: 'text-red-600 font-bold animate-pulse'
-     };
-     return <span className={`text-[10px] uppercase font-black tracking-widest ${styles[urgency]}`}>{urgency}</span>;
-  };
-
-  const getCreatorName = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    return user ? user.name : "Inconnu";
-  };
-
   return (
     <div className="space-y-6">
+      {/* Barre de filtres */}
       <div className="flex flex-col md:flex-row justify-between gap-4 bg-brand-light p-4 rounded-lg items-center shadow-lg">
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
           <div className="relative group w-full sm:w-auto">
@@ -263,6 +238,7 @@ const TicketManager: React.FC<TicketManagerProps> = ({
         </button>
       </div>
 
+      {/* Grille des tickets */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredTickets.map(ticket => {
             const club = clubs.find(c => c.id === ticket.clubId);
@@ -273,11 +249,30 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                     {ticket.status}
                   </span>
                   <div className="flex gap-2">
-                     <button onClick={() => handleOpenHistory(ticket)} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition" title="Historique"><History size={16} /></button>
                      {(currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.MANAGER || ticket.createdBy === currentUser.id) && (
                         <>
-                           <button onClick={() => handleOpenEdit(ticket)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-full transition" title="Modifier"><Edit2 size={16} /></button>
-                           <button onClick={(e) => handleDelete(e, ticket.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition cursor-pointer" title="Supprimer"><Trash2 size={16} /></button>
+                           <button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               handleOpenEdit(ticket);
+                             }} 
+                             className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-full transition" 
+                             title="Modifier"
+                           >
+                             <Edit2 size={16} />
+                           </button>
+                           <button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               if (window.confirm("Envoyer ce ticket à la corbeille ?")) {
+                                 onDeleteTicket(ticket.id);
+                               }
+                             }} 
+                             className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition" 
+                             title="Supprimer"
+                           >
+                             <Trash2 size={16} />
+                           </button>
                         </>
                      )}
                   </div>
@@ -305,7 +300,7 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                 <div className="border-t border-gray-700/50 pt-4 mt-auto space-y-4">
                    <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                          <img src={`https://ui-avatars.com/api/?name=${getCreatorName(ticket.createdBy)}&background=random`} className="w-6 h-6 rounded-full border border-gray-600" alt="Av" />
+                          <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(getCreatorName(ticket.createdBy))}&background=random`} className="w-6 h-6 rounded-full border border-gray-600" alt="Av" />
                           <span className="text-[10px] text-gray-400 font-bold uppercase">{getCreatorName(ticket.createdBy)}</span>
                       </div>
                       <span className="text-[9px] text-gray-500 font-black uppercase">{new Date(ticket.createdAt).toLocaleDateString('fr-FR')}</span>
@@ -313,12 +308,24 @@ const TicketManager: React.FC<TicketManagerProps> = ({
 
                    <div className="flex justify-end gap-2">
                      {(currentUser.role === UserRole.TECHNICIAN || currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.MANAGER) && ticket.status !== TicketStatus.RESOLVED && ticket.status !== TicketStatus.CANCELLED && (
-                       <button onClick={(e) => handleStatusUpdate(e, ticket.id, TicketStatus.RESOLVED)} className="flex-1 bg-green-500 text-white text-[10px] font-black uppercase py-2.5 rounded-lg hover:bg-green-600 transition shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 cursor-pointer">
+                       <button 
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           onUpdateStatus(ticket.id, TicketStatus.RESOLVED);
+                         }} 
+                         className="flex-1 bg-green-500 text-white text-[10px] font-black uppercase py-2.5 rounded-lg hover:bg-green-600 transition shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"
+                       >
                          <CheckCircle size={14} /> Clôturer
                        </button>
                      )}
                      {(currentUser.role === UserRole.TECHNICIAN || currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.MANAGER) && ticket.status === TicketStatus.OPEN && (
-                        <button onClick={(e) => handleStatusUpdate(e, ticket.id, TicketStatus.IN_PROGRESS)} className="flex-1 bg-brand-yellow text-brand-dark text-[10px] font-black uppercase py-2.5 rounded-lg hover:bg-yellow-400 transition shadow-lg shadow-brand-yellow/20 flex items-center justify-center gap-2 cursor-pointer">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUpdateStatus(ticket.id, TicketStatus.IN_PROGRESS);
+                          }} 
+                          className="flex-1 bg-brand-yellow text-brand-dark text-[10px] font-black uppercase py-2.5 rounded-lg hover:bg-yellow-400 transition shadow-lg shadow-brand-yellow/20 flex items-center justify-center gap-2"
+                        >
                           <Clock size={14} /> Prendre
                         </button>
                      )}
@@ -329,14 +336,29 @@ const TicketManager: React.FC<TicketManagerProps> = ({
         })}
       </div>
 
+      {/* Modal de création/édition */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col animate-fade-in-up">
             <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
-              <h2 className="text-xl font-black text-black uppercase tracking-tight">{isEditing ? 'Modifier le Ticket' : 'Nouveau Signalement'}</h2>
-              <button onClick={() => { stopCamera(); setShowModal(false); }} className="text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
+              <h2 className="text-xl font-black text-black uppercase tracking-tight">
+                {isEditing ? 'Modifier le Ticket' : 'Nouveau Signalement'}
+              </h2>
+              <button onClick={() => { stopCamera(); setShowModal(false); }} className="text-gray-400 hover:text-black transition-colors">
+                <X size={24} />
+              </button>
             </div>
             <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+              {isCameraOpen && (
+                 <div className="fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center">
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain"></video>
+                    <div className="absolute bottom-10 flex gap-6 items-center">
+                        <button type="button" onClick={stopCamera} className="bg-red-50 p-4 rounded-full text-white shadow-xl"><X size={24} /></button>
+                        <button type="button" onClick={takePhoto} className="bg-white p-6 rounded-full border-8 border-white/20 shadow-2xl"><div className="w-12 h-12 bg-brand-yellow rounded-full"></div></button>
+                    </div>
+                 </div>
+              )}
+
               <div className="space-y-1">
                 <label className="block text-xs font-black text-black uppercase tracking-widest">Club concerné</label>
                 <select className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={ticketClub} onChange={e => handleClubChange(e.target.value)}>
@@ -367,9 +389,9 @@ const TicketManager: React.FC<TicketManagerProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-black text-black uppercase tracking-widest">Description du problème</label>
+                <label className="block text-xs font-black text-black uppercase tracking-widest">Description précise</label>
                 <div className="relative">
-                  <textarea required rows={4} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-bold outline-none focus:ring-2 focus:ring-brand-yellow transition-all pr-12" value={ticketDesc} onChange={e => setTicketDesc(e.target.value)} placeholder="Décrivez la panne ici..." />
+                  <textarea required rows={4} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-bold outline-none focus:ring-2 focus:ring-brand-yellow transition-all pr-12" value={ticketDesc} onChange={e => setTicketDesc(e.target.value)} placeholder="Quel est le problème ?" />
                   <button type="button" onClick={handleAiAnalyze} disabled={!ticketDesc || aiLoading} className="absolute bottom-4 right-4 text-brand-yellow hover:scale-110 disabled:opacity-30 transition-all"><Sparkles size={28} className={aiLoading ? 'animate-spin' : ''} /></button>
                 </div>
                 {aiAdvice && <div className="mt-3 bg-brand-yellow/10 border border-brand-yellow/20 p-4 rounded-xl text-xs text-black font-bold animate-fade-in"><Sparkles size={14} className="inline mr-2 text-brand-yellow" />Conseil IA: {aiAdvice}</div>}
@@ -378,15 +400,15 @@ const TicketManager: React.FC<TicketManagerProps> = ({
               <div className="space-y-2">
                 <label className="block text-xs font-black text-black uppercase tracking-widest">Photo illustrative</label>
                 {!capturedImage ? (
-                  <button type="button" onClick={startCamera} className="flex flex-col items-center gap-3 text-xs font-black text-gray-400 border-2 border-dashed border-gray-300 hover:border-brand-yellow hover:bg-brand-yellow/5 rounded-2xl p-10 w-full transition-all group">
+                  <button type="button" onClick={startCamera} className="flex flex-col items-center gap-3 text-xs font-black text-gray-400 border-2 border-dashed border-gray-200 hover:border-brand-yellow hover:bg-brand-yellow/5 rounded-2xl p-10 w-full transition-all group">
                     <div className="bg-gray-50 group-hover:bg-brand-yellow/10 p-5 rounded-full transition-all shadow-sm"><Camera size={36} /></div>
                     <span>Prendre une photo</span>
                   </button>
                 ) : (
-                  <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl group">
+                  <div className="relative rounded-2xl overflow-hidden border border-gray-100 shadow-xl group">
                      <img src={capturedImage} alt="Capture" className="w-full h-56 object-cover" />
                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                        <button type="button" onClick={retakePhoto} className="bg-white text-brand-dark p-4 rounded-xl hover:bg-brand-yellow transition-all"><RefreshCw size={24} /></button>
+                        <button type="button" onClick={() => { setCapturedImage(null); startCamera(); }} className="bg-white text-brand-dark p-4 rounded-xl hover:bg-brand-yellow transition-all"><RefreshCw size={24} /></button>
                         <button type="button" onClick={() => setCapturedImage(null)} className="bg-red-500 text-white p-4 rounded-xl hover:bg-red-600 transition-all"><X size={24} /></button>
                      </div>
                   </div>

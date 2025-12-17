@@ -163,7 +163,7 @@ const App: React.FC = () => {
     
     if (!supabase) {
         const demoTicket = { ...newTicketData, id: `demo_${Date.now()}`, createdAt: new Date().toISOString(), status: TicketStatus.OPEN, deleted: false, history } as Ticket;
-        setTickets([demoTicket, ...tickets]);
+        setTickets(prev => [demoTicket, ...prev]);
         return;
     }
     try {
@@ -181,7 +181,7 @@ const App: React.FC = () => {
   const handleEditTicket = async (updatedTicketData: Ticket) => {
     if (!currentUser) return;
     if (!supabase) {
-        setTickets(tickets.map(t => t.id === updatedTicketData.id ? updatedTicketData : t));
+        setTickets(prev => prev.map(t => t.id === updatedTicketData.id ? updatedTicketData : t));
         return;
     }
     try {
@@ -197,7 +197,7 @@ const App: React.FC = () => {
     if (!ticket) return;
 
     if (!supabase) {
-        setTickets(tickets.map(t => t.id === ticketId ? { ...t, deleted: true, status: TicketStatus.CANCELLED } : t));
+        setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, deleted: true, status: TicketStatus.CANCELLED } : t));
         return;
     }
     try {
@@ -212,7 +212,7 @@ const App: React.FC = () => {
     if (!ticket) return;
 
     if (!supabase) {
-        setTickets(tickets.map(t => t.id === id ? { ...t, status } : t));
+        setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
         return;
     }
     try {
@@ -227,7 +227,7 @@ const App: React.FC = () => {
     if (!ticket) return;
 
     if (!supabase) {
-        setTickets(tickets.map(t => t.id === id ? { ...t, deleted: false, status: TicketStatus.OPEN } : t));
+        setTickets(prev => prev.map(t => t.id === id ? { ...t, deleted: false, status: TicketStatus.OPEN } : t));
         return;
     }
     try { 
@@ -237,7 +237,7 @@ const App: React.FC = () => {
   };
 
   const handlePermanentDeleteTicket = async (id: string) => { 
-    if (!supabase) { setTickets(tickets.filter(t => t.id !== id)); return; }
+    if (!supabase) { setTickets(prev => prev.filter(t => t.id !== id)); return; }
     try { await supabase.from('tickets').delete().eq('id', id); } catch (e) { console.error(e); } 
   };
 
@@ -245,7 +245,7 @@ const App: React.FC = () => {
   const handleCreateCheck = async (newCheckData: Partial<PeriodicCheck>) => { 
     if (!supabase) {
         const demo = { ...newCheckData, id: `demo_${Date.now()}`, status: CheckStatus.UPCOMING, deleted: false } as PeriodicCheck;
-        setChecks([demo, ...checks]);
+        setChecks(prev => [demo, ...prev]);
         return;
     }
     try { await supabase.from('checks').insert([{ ...newCheckData, status: CheckStatus.UPCOMING, checklistItems: newCheckData.checklistItems || [], deleted: false }]); } catch (e) { console.error(e); } 
@@ -253,24 +253,24 @@ const App: React.FC = () => {
 
   const handleUpdateCheck = async (id: string, items: any[], status: CheckStatus) => { 
     if (!supabase) {
-        setChecks(checks.map(c => c.id === id ? { ...c, checklistItems: items, status } : c));
+        setChecks(prev => prev.map(c => c.id === id ? { ...c, checklistItems: items, status } : c));
         return;
     }
     try { await supabase.from('checks').update({ checklistItems: items, status }).eq('id', id); } catch (e) { console.error(e); } 
   };
 
   const handleDeleteCheck = async (id: string) => { 
-    if (!supabase) { setChecks(checks.map(c => c.id === id ? { ...c, deleted: true } : c)); return; }
+    if (!supabase) { setChecks(prev => prev.map(c => c.id === id ? { ...c, deleted: true } : c)); return; }
     try { await supabase.from('checks').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); } 
   };
 
   const handleRestoreCheck = async (id: string) => { 
-    if (!supabase) { setChecks(checks.map(c => c.id === id ? { ...c, deleted: false } : c)); return; }
+    if (!supabase) { setChecks(prev => prev.map(c => c.id === id ? { ...c, deleted: false } : c)); return; }
     try { await supabase.from('checks').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); } 
   };
 
   const handlePermanentDeleteCheck = async (id: string) => { 
-    if (!supabase) { setChecks(checks.filter(c => c.id !== id)); return; }
+    if (!supabase) { setChecks(prev => prev.filter(c => c.id !== id)); return; }
     try { await supabase.from('checks').delete().eq('id', id); } catch (e) { console.error(e); } 
   };
 
@@ -278,7 +278,7 @@ const App: React.FC = () => {
   const handleAddMaintenanceEvent = async (event: Partial<MaintenanceEvent>) => {
     if (!supabase) {
       const demo = { ...event, id: `demo_${Date.now()}`, deleted: false } as MaintenanceEvent;
-      setMaintenanceEvents([demo, ...maintenanceEvents]);
+      setMaintenanceEvents(prev => [demo, ...prev]);
       return;
     }
     try { await supabase.from('maintenance').insert([{ ...event, deleted: false }]); } catch (e) { console.error(e); }
@@ -286,7 +286,7 @@ const App: React.FC = () => {
 
   const handleEditMaintenanceEvent = async (event: MaintenanceEvent) => {
     if (!supabase) {
-      setMaintenanceEvents(maintenanceEvents.map(m => m.id === event.id ? event : m));
+      setMaintenanceEvents(prev => prev.map(m => m.id === event.id ? event : m));
       return;
     }
     try {
@@ -297,7 +297,7 @@ const App: React.FC = () => {
 
   const handleDeleteMaintenanceEvent = async (id: string) => {
     if (!supabase) {
-      setMaintenanceEvents(maintenanceEvents.map(m => m.id === id ? { ...m, deleted: true } : m));
+      setMaintenanceEvents(prev => prev.map(m => m.id === id ? { ...m, deleted: true } : m));
       return;
     }
     try { await supabase.from('maintenance').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); }
@@ -305,7 +305,7 @@ const App: React.FC = () => {
 
   const handleRestoreMaintenance = async (id: string) => {
     if (!supabase) {
-      setMaintenanceEvents(maintenanceEvents.map(m => m.id === id ? { ...m, deleted: false } : m));
+      setMaintenanceEvents(prev => prev.map(m => m.id === id ? { ...m, deleted: false } : m));
       return;
     }
     try { await supabase.from('maintenance').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); }
@@ -313,7 +313,7 @@ const App: React.FC = () => {
 
   const handlePermanentDeleteMaintenance = async (id: string) => {
     if (!supabase) {
-      setMaintenanceEvents(maintenanceEvents.filter(m => m.id !== id));
+      setMaintenanceEvents(prev => prev.filter(m => m.id !== id));
       return;
     }
     try { await supabase.from('maintenance').delete().eq('id', id); } catch (e) { console.error(e); }
@@ -323,58 +323,58 @@ const App: React.FC = () => {
   const handleAddPlanningEvent = async (event: Partial<PlanningEvent>) => { 
     if (!supabase) {
         const demo = { ...event, id: `demo_${Date.now()}`, deleted: false, createdBy: currentUser?.id } as PlanningEvent;
-        setPlanningEvents([demo, ...planningEvents]);
+        setPlanningEvents(prev => [demo, ...prev]);
         return;
     }
     try { await supabase.from('planning').insert([{ ...event, deleted: false, createdBy: currentUser?.id }]); } catch (e) { console.error(e); } 
   };
 
   const handleEditPlanningEvent = async (event: PlanningEvent) => { 
-    if (!supabase) { setPlanningEvents(planningEvents.map(p => p.id === event.id ? event : p)); return; }
+    if (!supabase) { setPlanningEvents(prev => prev.map(p => p.id === event.id ? event : p)); return; }
     try { const { id, ...data } = event; await supabase.from('planning').update(data).eq('id', id); } catch (e) { console.error(e); } 
   };
 
   const handleDeletePlanningEvent = async (id: string) => { 
-    if (!supabase) { setPlanningEvents(planningEvents.map(p => p.id === id ? { ...p, deleted: true } : p)); return; }
+    if (!supabase) { setPlanningEvents(prev => prev.map(p => p.id === id ? { ...p, deleted: true } : p)); return; }
     try { await supabase.from('planning').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); } 
   };
 
   const handleRestorePlanningEvent = async (id: string) => { 
-    if (!supabase) { setPlanningEvents(planningEvents.map(p => p.id === id ? { ...p, deleted: false } : p)); return; }
+    if (!supabase) { setPlanningEvents(prev => prev.map(p => p.id === id ? { ...p, deleted: false } : p)); return; }
     try { await supabase.from('planning').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); } 
   };
 
   const handlePermanentDeletePlanningEvent = async (id: string) => { 
-    if (!supabase) { setPlanningEvents(planningEvents.filter(p => p.id !== id)); return; }
+    if (!supabase) { setPlanningEvents(prev => prev.filter(p => p.id !== id)); return; }
     try { await supabase.from('planning').delete().eq('id', id); } catch (e) { console.error(e); } 
   };
 
   // --- GESTION DES DOCUMENTS ---
   const handleAddDocument = async (docData: Partial<DocumentFile>) => { 
-    if (!supabase) { const demo = { ...docData, id: `demo_${Date.now()}` } as DocumentFile; setDocs([demo, ...docs]); return; }
+    if (!supabase) { const demo = { ...docData, id: `demo_${Date.now()}` } as DocumentFile; setDocs(prev => [demo, ...prev]); return; }
     try { await supabase.from('documents').insert([{ ...docData }]); } catch (e) { console.error(e); } 
   };
 
   const handleDeleteDocument = async (id: string) => { 
-    if (!supabase) { setDocs(docs.filter(d => d.id !== id)); return; }
+    if (!supabase) { setDocs(prev => prev.filter(d => d.id !== id)); return; }
     try { await supabase.from('documents').delete().eq('id', id); } catch (e) { console.error(e); } 
   };
 
-  // --- AUTRES GESTIONS (Artisans, Specs, Users) ---
+  // --- AUTRES GESTIONS ---
   const handleAddArtisan = async (artisan: Partial<Artisan>) => { 
-    if (!supabase) { const demo = { ...artisan, id: `demo_${Date.now()}` } as Artisan; setArtisans([demo, ...artisans]); return; }
+    if (!supabase) { const demo = { ...artisan, id: `demo_${Date.now()}` } as Artisan; setArtisans(prev => [demo, ...prev]); return; }
     await supabase.from('artisans').insert([artisan]); 
   };
 
   const handleAddSpecification = async (spec: Partial<Specification>) => { 
-    if (!supabase) { const demo = { ...spec, id: `demo_${Date.now()}` } as Specification; setSpecifications([demo, ...specifications]); return; }
+    if (!supabase) { const demo = { ...spec, id: `demo_${Date.now()}` } as Specification; setSpecifications(prev => [demo, ...prev]); return; }
     await supabase.from('specifications').insert([spec]); 
   };
 
   const handleAddUser = async (user: Partial<User>, password?: string) => { 
     if (!supabase) {
         const demo = { ...user, id: `demo_${Date.now()}` } as User;
-        setUsers([...users, demo]);
+        setUsers(prev => [...prev, demo]);
         if (password) setUserPasswords(prev => ({ ...prev, [demo.id]: password }));
         return;
     }
@@ -393,8 +393,8 @@ const App: React.FC = () => {
     } catch (e) { console.error(e); } 
   };
 
-  const handleMarkNotificationAsRead = (id: string) => setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
-  const handleMarkAllNotificationsAsRead = () => setNotifications(notifications.map(n => ({ ...n, read: true })));
+  const handleMarkNotificationAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const handleMarkAllNotificationsAsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
   const renderContent = () => {
     if (!currentUser) return null;
