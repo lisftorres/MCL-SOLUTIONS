@@ -240,20 +240,20 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
             <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-              <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">
+              <h2 className="text-xl font-black text-black uppercase tracking-tight">
                 {isEditing ? 'Suivi Maintenance' : 'Planifier une maintenance'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-brand-dark transition-colors"><X size={24} /></button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="col-span-full space-y-1">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Titre de l'intervention</label>
+                  <label className="block text-xs font-black text-black uppercase tracking-widest">Titre de l'intervention</label>
                   <input 
                     type="text" 
                     required
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black font-bold focus:ring-2 focus:ring-brand-yellow outline-none transition-all"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all"
                     value={formData.title}
                     onChange={e => setFormData({...formData, title: e.target.value})}
                     placeholder="Ex: Remplacement filtres CTA"
@@ -261,34 +261,34 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Date prévue</label>
+                  <label className="block text-xs font-black text-black uppercase tracking-widest">Date prévue</label>
                   <input 
                     type="date" 
                     required
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black font-bold focus:ring-2 focus:ring-brand-yellow outline-none transition-all"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all"
                     value={formData.date}
                     onChange={e => setFormData({...formData, date: e.target.value})}
                   />
                 </div>
 
                 <div className="space-y-1">
-                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Club Concerné</label>
+                   <label className="block text-xs font-black text-black uppercase tracking-widest">Club Concerné</label>
                    <select 
-                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black font-bold outline-none"
+                     className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-black font-black outline-none"
                      value={formData.clubId || ''}
                      onChange={(e) => handleClubChange(e.target.value)}
                    >
                      <option value="" disabled>Sélectionner...</option>
-                     {allowedClubs.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                     {allowedClubs.map(c => <option key={c.id} value={c.id} className="text-black">{c.name}</option>)}
                    </select>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Description / Notes</label>
+                <label className="block text-xs font-black text-black uppercase tracking-widest">Description / Notes</label>
                 <textarea 
                   rows={3}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black font-bold focus:ring-2 focus:ring-brand-yellow outline-none"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-black font-bold outline-none focus:ring-2 focus:ring-brand-yellow"
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   placeholder="Détails de l'intervention..."
@@ -296,20 +296,20 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
               </div>
 
               {formData.clubId && (formData.checklist?.length || 0) > 0 && (
-                 <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
-                   <h3 className="text-xs font-black text-brand-dark uppercase tracking-widest mb-4 flex items-center gap-2">
+                 <div className="bg-gray-100 p-5 rounded-xl border border-gray-200">
+                   <h3 className="text-xs font-black text-black uppercase tracking-widest mb-4 flex items-center gap-2">
                      <CheckSquare size={16} className="text-brand-yellow" /> Validation par Espace
                    </h3>
                    <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                      {formData.checklist?.map((item, idx) => (
-                       <label key={idx} className="flex items-center space-x-3 bg-white p-3 rounded-lg border border-gray-100 cursor-pointer hover:border-brand-yellow transition-all group shadow-sm">
+                       <label key={idx} className="flex items-center space-x-3 bg-white p-3 rounded-lg border border-gray-300 cursor-pointer hover:border-brand-yellow transition-all group shadow-sm">
                          <input 
                            type="checkbox" 
                            checked={item.checked} 
                            onChange={() => handleToggleChecklist(item.space)}
                            className="w-5 h-5 rounded border-gray-300 text-brand-yellow focus:ring-brand-yellow transition-all"
                          />
-                         <span className={`text-sm font-bold transition-colors ${item.checked ? 'text-green-600' : 'text-gray-600 group-hover:text-brand-dark'}`}>
+                         <span className={`text-sm font-black transition-colors ${item.checked ? 'text-green-600' : 'text-black group-hover:text-black'}`}>
                             {item.space}
                          </span>
                        </label>
@@ -319,42 +319,42 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
               )}
 
               <div className="border-t border-gray-100 pt-6">
-                 <h3 className="text-xs font-black text-brand-dark uppercase tracking-widest mb-4 flex items-center gap-2">
+                 <h3 className="text-xs font-black text-black uppercase tracking-widest mb-4 flex items-center gap-2">
                     <PenTool size={16} className="text-blue-500" /> Validation & Signatures
                  </h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className={`p-4 rounded-xl border-2 transition-all ${formData.signatures?.technician ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100'}`}>
-                       <div className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-3">Technicien</div>
+                    <div className={`p-4 rounded-xl border-2 transition-all ${formData.signatures?.technician ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-300'}`}>
+                       <div className="text-[10px] text-black uppercase font-black tracking-widest mb-3">Technicien</div>
                        {formData.signatures?.technician ? (
                           <div>
-                             <p className="text-brand-dark font-black text-sm">{formData.signatures.technician.name}</p>
-                             <p className="text-[10px] text-gray-500 font-bold">{new Date(formData.signatures.technician.date).toLocaleString('fr-FR')}</p>
+                             <p className="text-black font-black text-sm">{formData.signatures.technician.name}</p>
+                             <p className="text-[10px] text-gray-600 font-bold">{new Date(formData.signatures.technician.date).toLocaleString('fr-FR')}</p>
                           </div>
                        ) : (
                           <button 
                              type="button"
                              disabled={currentUser.role === UserRole.MANAGER}
                              onClick={() => handleSign('TECH')}
-                             className="w-full py-3 bg-white text-brand-yellow border-2 border-brand-yellow/30 font-black text-xs uppercase tracking-tighter rounded-lg hover:bg-brand-yellow hover:text-brand-dark transition-all disabled:opacity-20"
+                             className="w-full py-3 bg-white text-brand-yellow border-2 border-brand-yellow/30 font-black text-xs uppercase tracking-tighter rounded-lg hover:bg-brand-yellow hover:text-brand-dark transition-all disabled:opacity-20 cursor-pointer"
                           >
                              Signer l'intervention
                           </button>
                        )}
                     </div>
 
-                    <div className={`p-4 rounded-xl border-2 transition-all ${formData.signatures?.manager ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100'}`}>
-                       <div className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-3">Responsable Club</div>
+                    <div className={`p-4 rounded-xl border-2 transition-all ${formData.signatures?.manager ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-300'}`}>
+                       <div className="text-[10px] text-black uppercase font-black tracking-widest mb-3">Responsable Club</div>
                        {formData.signatures?.manager ? (
                           <div>
-                             <p className="text-brand-dark font-black text-sm">{formData.signatures.manager.name}</p>
-                             <p className="text-[10px] text-gray-500 font-bold">{new Date(formData.signatures.manager.date).toLocaleString('fr-FR')}</p>
+                             <p className="text-black font-black text-sm">{formData.signatures.manager.name}</p>
+                             <p className="text-[10px] text-gray-600 font-bold">{new Date(formData.signatures.manager.date).toLocaleString('fr-FR')}</p>
                           </div>
                        ) : (
                           <button 
                              type="button"
                              disabled={currentUser.role === UserRole.TECHNICIAN}
                              onClick={() => handleSign('MANAGER')}
-                             className="w-full py-3 bg-white text-blue-500 border-2 border-blue-500/30 font-black text-xs uppercase tracking-tighter rounded-lg hover:bg-blue-500 hover:text-white transition-all disabled:opacity-20"
+                             className="w-full py-3 bg-white text-blue-500 border-2 border-blue-500/30 font-black text-xs uppercase tracking-tighter rounded-lg hover:bg-blue-500 hover:text-white transition-all disabled:opacity-20 cursor-pointer"
                           >
                              Valider la maintenance
                           </button>
@@ -363,7 +363,7 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                  </div>
               </div>
 
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="flex items-center space-x-3 p-4 bg-gray-100 rounded-xl border border-gray-300">
                 <input 
                   type="checkbox" 
                   id="notify"
@@ -371,16 +371,16 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                   checked={formData.notifyOnDashboard}
                   onChange={e => setFormData({...formData, notifyOnDashboard: e.target.checked})}
                 />
-                <label htmlFor="notify" className="text-sm font-bold text-brand-dark cursor-pointer select-none">
+                <label htmlFor="notify" className="text-sm font-black text-black cursor-pointer select-none">
                   Afficher un rappel sur le Tableau de Bord
                 </label>
               </div>
 
               <div className="pt-6 flex gap-4 border-t border-gray-100 sticky bottom-0 bg-white">
                 {isEditing && currentUser.role !== UserRole.MANAGER && (
-                  <button type="button" onClick={handleDelete} className="p-4 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-all shadow-sm"><Trash2 size={24} /></button>
+                  <button type="button" onClick={handleDelete} className="p-4 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-all shadow-sm cursor-pointer"><Trash2 size={24} /></button>
                 )}
-                <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase tracking-tight py-4 rounded-xl hover:bg-yellow-400 transition-all shadow-xl shadow-brand-yellow/20">
+                <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase tracking-tight py-4 rounded-xl hover:bg-yellow-400 transition-all shadow-xl shadow-brand-yellow/20 cursor-pointer">
                   {isEditing ? 'Mettre à jour' : 'Enregistrer le planning'}
                 </button>
               </div>

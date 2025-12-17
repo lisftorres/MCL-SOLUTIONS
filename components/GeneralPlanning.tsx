@@ -154,31 +154,31 @@ const GeneralPlanning: React.FC<GeneralPlanningProps> = ({
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up">
             <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
-              <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">{isEditing ? 'Modifier Événement' : 'Planifier Événement'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-brand-dark transition-colors"><X size={24} /></button>
+              <h2 className="text-xl font-black text-black uppercase tracking-tight">{isEditing ? 'Modifier Événement' : 'Planifier Événement'}</h2>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Libellé de l'événement</label>
-                <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="Ex: Livraison FP Comboire" />
+                <label className="block text-xs font-black text-black uppercase tracking-widest">Titre de l'événement</label>
+                <input type="text" required className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="Ex: Livraison FP Comboire" />
               </div>
 
               <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-1">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Date</label>
-                    <input type="date" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                    <label className="block text-xs font-black text-black uppercase tracking-widest">Date</label>
+                    <input type="date" required className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Heure</label>
-                    <input type="time" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none" value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})} />
+                    <label className="block text-xs font-black text-black uppercase tracking-widest">Heure</label>
+                    <input type="time" required className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none" value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})} />
                   </div>
               </div>
 
               <div className="grid grid-cols-2 gap-5">
                  <div className="space-y-1">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Catégorie</label>
-                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})}>
+                    <label className="block text-xs font-black text-black uppercase tracking-widest">Type</label>
+                    <select className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})}>
                         <option value="RDV">Rendez-vous</option>
                         <option value="LIVRAISON">Livraison</option>
                         <option value="AUTRE">Autre</option>
@@ -187,29 +187,29 @@ const GeneralPlanning: React.FC<GeneralPlanningProps> = ({
                  <div className="flex items-center pt-6 px-2">
                     <label className="flex items-center space-x-3 cursor-pointer group">
                         <input type="checkbox" checked={formData.alert} onChange={e => setFormData({...formData, alert: e.target.checked})} className="w-6 h-6 rounded border-gray-300 text-brand-yellow focus:ring-brand-yellow" />
-                        <span className="text-xs font-black text-brand-dark uppercase tracking-tighter">Alerte active</span>
+                        <span className="text-xs font-black text-black uppercase tracking-tighter">Alerte active</span>
                     </label>
                  </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Lieu de l'événement</label>
+                <label className="block text-xs font-black text-black uppercase tracking-widest">Lieu</label>
                 <div className="relative group">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-brand-yellow" size={18} />
-                    <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="Ex: Club Meylan" />
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-yellow" size={18} />
+                    <input type="text" className="w-full bg-gray-50 border border-gray-300 rounded-xl pl-12 pr-4 py-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="Ex: Club Meylan" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Description / Notes</label>
-                <textarea rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-bold outline-none focus:ring-2 focus:ring-brand-yellow" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Notes additionnelles..." />
+                <label className="block text-xs font-black text-black uppercase tracking-widest">Notes / Description</label>
+                <textarea rows={3} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-bold outline-none focus:ring-2 focus:ring-brand-yellow" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Notes importantes..." />
               </div>
 
               <div className="pt-6 flex gap-4 border-t border-gray-100">
                 {isEditing && (
-                  <button type="button" onClick={handleDelete} className="p-4 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-all"><Trash2 size={24} /></button>
+                  <button type="button" onClick={handleDelete} className="p-4 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-all cursor-pointer"><Trash2 size={24} /></button>
                 )}
-                <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase tracking-tight py-4 rounded-xl hover:bg-yellow-400 transition-all shadow-xl shadow-brand-yellow/20">
+                <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase tracking-tight py-4 rounded-xl hover:bg-yellow-400 transition-all shadow-xl shadow-brand-yellow/20 cursor-pointer">
                   {isEditing ? 'Mettre à jour' : 'Confirmer le planning'}
                 </button>
               </div>
