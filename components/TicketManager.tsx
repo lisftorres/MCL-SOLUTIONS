@@ -178,9 +178,8 @@ const TicketManager: React.FC<TicketManagerProps> = ({
   };
 
   const handleDelete = (ticketId: string) => {
-    if(window.confirm("Voulez-vous supprimer ce ticket ? Il sera déplacé directement dans la corbeille.")) {
-      onDeleteTicket(ticketId);
-    }
+    // Action directe sans confirmation pour plus de rapidité, l'élément va en corbeille
+    onDeleteTicket(ticketId);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -308,7 +307,7 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                            <button 
                                onClick={() => handleDelete(ticket.id)}
                                className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition"
-                               title="Supprimer (Mettre à la Corbeille)"
+                               title="Mettre à la Corbeille"
                            >
                                <Trash2 size={16} />
                            </button>

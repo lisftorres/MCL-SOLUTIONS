@@ -1,7 +1,14 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://ihjgihivlvmcjonkbzbf.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloamdpaGl2bHZtY2pvbmtiemJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4OTI2OTUsImV4cCI6MjA4MTQ2ODY5NX0.Dd5VvBsSdyZrRK4m-4KpnNcRxmrKUZgkfGZ_ue9n09Q';
+// Les identifiants sont récupérés via process.env configuré dans vite.config.ts.
+// @ts-ignore
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+// @ts-ignore
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// On n'initialise le client que si les variables sont présentes pour éviter l'erreur "supabaseUrl is required"
+// Sinon on exporte null, et l'application basculera en mode démo (MOCK_DATA).
+export const supabase = (supabaseUrl && supabaseKey) 
+  ? createClient(supabaseUrl, supabaseKey) 
+  : null;
