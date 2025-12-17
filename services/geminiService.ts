@@ -8,15 +8,8 @@ import { TradeType, Urgency } from "../types";
  */
 export const analyzeTicketDescription = async (description: string) => {
   // The API key must be obtained exclusively from the process.env.API_KEY environment variable.
-  const apiKey = process.env.API_KEY;
-
-  if (!apiKey) {
-    console.error("Gemini AI API Key is missing. Ensure process.env.API_KEY is configured.");
-    return null;
-  }
-
-  // Create a new GoogleGenAI instance right before the API call to ensure it uses the latest configuration.
-  const ai = new GoogleGenAI({ apiKey });
+  // Use this process.env.API_KEY string directly when initializing the @google/genai client instance.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
