@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import Login from './components/Login';
@@ -16,167 +17,38 @@ import RecycleBin from './components/RecycleBin';
 import { MOCK_CLUBS, MOCK_TICKETS, MOCK_CHECKS, MOCK_DOCS, MOCK_USERS, MOCK_MAINTENANCE, MOCK_FAILURE_TYPES, MOCK_ARTISANS, MOCK_SPECS, MOCK_PLANNING_EVENTS } from './constants';
 import { Ticket, TicketStatus, PeriodicCheck, CheckStatus, UserRole, MaintenanceEvent, Club, TradeType, User, Artisan, DocumentFile, Specification, AppNotification, NotificationPreferences, Urgency, PlanningEvent } from './types';
 import { Database, Copy, AlertTriangle } from 'lucide-react';
-
-// Supabase Import
 import { supabase } from './services/supabase';
 
-// Script SQL pour créer les tables si elles manquent
 const SUPABASE_SCHEMA_SQL = `
--- Activez l'extension UUID pour générer des IDs uniques
+-- Extension et Tables
 create extension if not exists "uuid-ossp";
-
--- 1. Table Tickets
-create table if not exists public.tickets (
-  id text primary key default uuid_generate_v4()::text,
-  "clubId" text,
-  space text,
-  trade text,
-  description text,
-  status text,
-  urgency text,
-  "createdAt" text,
-  "assignedTo" text,
-  "createdBy" text,
-  images text[],
-  "technicalReport" text,
-  history jsonb,
-  deleted boolean default false
-);
-
--- 2. Table Users
-create table if not exists public.users (
-  id text primary key,
-  name text,
-  email text,
-  role text,
-  "clubIds" text[],
-  avatar text,
-  preferences jsonb
-);
-
--- 3. Table Checks (Vérifications)
-create table if not exists public.checks (
-  id text primary key default uuid_generate_v4()::text,
-  "clubId" text,
-  space text,
-  trade text,
-  title text,
-  "frequencyMonths" numeric,
-  "lastChecked" text,
-  "nextDueDate" text,
-  status text,
-  "checklistItems" jsonb,
-  "technicianSignature" text,
-  history jsonb,
-  deleted boolean default false
-);
-
--- 4. Table Maintenance
-create table if not exists public.maintenance (
-  id text primary key default uuid_generate_v4()::text,
-  title text,
-  date text,
-  description text,
-  "notifyOnDashboard" boolean,
-  "clubId" text,
-  checklist jsonb,
-  signatures jsonb,
-  deleted boolean default false
-);
-
--- 5. Table Planning
-create table if not exists public.planning (
-  id text primary key default uuid_generate_v4()::text,
-  title text,
-  date text,
-  "startTime" text,
-  type text,
-  description text,
-  location text,
-  alert boolean,
-  "createdBy" text,
-  deleted boolean default false
-);
-
--- 6. Table Documents
-create table if not exists public.documents (
-  id text primary key default uuid_generate_v4()::text,
-  name text,
-  type text,
-  url text,
-  "clubId" text,
-  date text
-);
-
--- 7. Table Specifications
-create table if not exists public.specifications (
-  id text primary key default uuid_generate_v4()::text,
-  category text,
-  title text,
-  brand text,
-  "partType" text,
-  "installationType" text,
-  "imageUrl" text,
-  "documentUrl" text,
-  "documentName" text
-);
-
--- 8. Table Artisans
-create table if not exists public.artisans (
-  id text primary key default uuid_generate_v4()::text,
-  "companyName" text,
-  "contactName" text,
-  trade text,
-  phone text,
-  email text,
-  address text,
-  notes text
-);
-
--- Politiques de sécurité (RLS) - Accès public pour la démo
-alter table public.tickets enable row level security;
-create policy "Public Access" on public.tickets for all using (true);
-
-alter table public.users enable row level security;
-create policy "Public Access" on public.users for all using (true);
-
-alter table public.checks enable row level security;
-create policy "Public Access" on public.checks for all using (true);
-
-alter table public.maintenance enable row level security;
-create policy "Public Access" on public.maintenance for all using (true);
-
-alter table public.planning enable row level security;
-create policy "Public Access" on public.planning for all using (true);
-
-alter table public.documents enable row level security;
-create policy "Public Access" on public.documents for all using (true);
-
-alter table public.specifications enable row level security;
-create policy "Public Access" on public.specifications for all using (true);
-
-alter table public.artisans enable row level security;
-create policy "Public Access" on public.artisans for all using (true);
+create table if not exists public.tickets ( id text primary key default uuid_generate_v4()::text, "clubId" text, space text, trade text, description text, status text, urgency text, "createdAt" text, "assignedTo" text, "createdBy" text, images text[], "technicalReport" text, history jsonb, deleted boolean default false );
+create table if not exists public.users ( id text primary key, name text, email text, role text, "clubIds" text[], avatar text, preferences jsonb );
+create table if not exists public.checks ( id text primary key default uuid_generate_v4()::text, "clubId" text, space text, trade text, title text, "frequencyMonths" numeric, "lastChecked" text, "nextDueDate" text, status text, "checklistItems" jsonb, "technicianSignature" text, history jsonb, deleted boolean default false );
+create table if not exists public.maintenance ( id text primary key default uuid_generate_v4()::text, title text, date text, description text, "notifyOnDashboard" boolean, "clubId" text, checklist jsonb, signatures jsonb, deleted boolean default false );
+create table if not exists public.planning ( id text primary key default uuid_generate_v4()::text, title text, date text, "startTime" text, type text, description text, location text, alert boolean, "createdBy" text, deleted boolean default false );
+create table if not exists public.documents ( id text primary key default uuid_generate_v4()::text, name text, type text, url text, "clubId" text, date text );
+create table if not exists public.specifications ( id text primary key default uuid_generate_v4()::text, category text, title text, brand text, "partType" text, "installationType" text, "imageUrl" text, "documentUrl" text, "documentName" text );
+create table if not exists public.artisans ( id text primary key default uuid_generate_v4()::text, "companyName" text, "contactName" text, trade text, phone text, email text, address text, notes text );
+-- RLS (Public for demo)
+alter table public.tickets enable row level security; create policy "Public Access" on public.tickets for all using (true);
+alter table public.users enable row level security; create policy "Public Access" on public.users for all using (true);
+alter table public.checks enable row level security; create policy "Public Access" on public.checks for all using (true);
+alter table public.maintenance enable row level security; create policy "Public Access" on public.maintenance for all using (true);
+alter table public.planning enable row level security; create policy "Public Access" on public.planning for all using (true);
+alter table public.documents enable row level security; create policy "Public Access" on public.documents for all using (true);
+alter table public.specifications enable row level security; create policy "Public Access" on public.specifications for all using (true);
+alter table public.artisans enable row level security; create policy "Public Access" on public.artisans for all using (true);
 `;
 
 const App: React.FC = () => {
-  // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  // App Data State
   const [activeTab, setActiveTab] = useState('dashboard');
   const [users, setUsers] = useState<User[]>([]);
-  
   const [userPasswords, setUserPasswords] = useState<Record<string, string>>({
-    'admin_fixed': 'Marielis1338!',
-    'user_marie': '123456',
-    'u_jonas': '123456',
-    'u_leanne': '123456',
-    'u_brian': '123456',
-    'u_julien': '123456'
+    'admin_fixed': 'Marielis1338!', 'user_marie': '123456', 'u_jonas': '123456', 'u_leanne': '123456', 'u_brian': '123456', 'u_julien': '123456'
   });
-  
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [checks, setChecks] = useState<PeriodicCheck[]>([]);
   const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>([]);
@@ -185,49 +57,25 @@ const App: React.FC = () => {
   const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [specifications, setSpecifications] = useState<Specification[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  
   const [clubs, setClubs] = useState<Club[]>(MOCK_CLUBS);
   const [failureTypes, setFailureTypes] = useState<Record<TradeType, string[]>>(MOCK_FAILURE_TYPES);
-
-  // State pour gérer l'erreur de configuration Supabase
   const [setupRequired, setSetupRequired] = useState(false);
 
-  // ----------------------------------------------------------------------
-  // SUPABASE SYNCHRONIZATION
-  // ----------------------------------------------------------------------
   useEffect(() => {
     if (!supabase) return;
-
     const subscribe = (table: string, setState: React.Dispatch<React.SetStateAction<any[]>>, fallbackData: any[]) => {
-      // Fetch initial data
       supabase.from(table).select('*').then(({ data, error }) => {
-        if (!error && data) {
-           setState(data);
-        } else {
-           // Affichage propre de l'erreur
-           const errorMsg = error?.message || JSON.stringify(error);
-           console.warn(`Supabase: Erreur fetch '${table}'. Utilisation des données locales.`, errorMsg);
-           
-           // Code 42P01 = undefined_table (Table manquante)
-           if (error && error.code === '42P01') {
-               setSetupRequired(true);
-           }
+        if (!error && data) setState(data);
+        else {
+           if (error && error.code === '42P01') setSetupRequired(true);
            setState(fallbackData);
         }
       });
-
-      // Subscribe to changes
-      const channel = supabase.channel(`public:${table}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: table }, () => {
-           supabase.from(table).select('*').then(({ data }) => {
-              if (data) setState(data);
-           });
-        })
-        .subscribe();
-      
+      const channel = supabase.channel(`public:${table}`).on('postgres_changes', { event: '*', schema: 'public', table: table }, () => {
+           supabase.from(table).select('*').then(({ data }) => { if (data) setState(data); });
+      }).subscribe();
       return () => { supabase.removeChannel(channel); };
     };
-
     const unsubTickets = subscribe('tickets', setTickets, MOCK_TICKETS);
     const unsubChecks = subscribe('checks', setChecks, MOCK_CHECKS);
     const unsubMaintenance = subscribe('maintenance', setMaintenanceEvents, MOCK_MAINTENANCE);
@@ -236,128 +84,60 @@ const App: React.FC = () => {
     const unsubSpecs = subscribe('specifications', setSpecifications, MOCK_SPECS);
     const unsubArtisans = subscribe('artisans', setArtisans, MOCK_ARTISANS);
     const unsubUsers = subscribe('users', setUsers, MOCK_USERS);
-
-    return () => {
-      unsubTickets();
-      unsubChecks();
-      unsubMaintenance();
-      unsubPlanning();
-      unsubDocs();
-      unsubSpecs();
-      unsubArtisans();
-      unsubUsers();
-    };
+    return () => { unsubTickets(); unsubChecks(); unsubMaintenance(); unsubPlanning(); unsubDocs(); unsubSpecs(); unsubArtisans(); unsubUsers(); };
   }, []);
 
-  // Fonction pour charger les données de démo dans Supabase
   const seedDatabase = async () => {
     if (window.confirm("Charger les données de démonstration ?")) {
         try {
-            // Note: On garde les IDs des users pour que le login fonctionne, mais on laisse générer les autres
             await supabase.from('users').insert(MOCK_USERS); 
-            // Pour les tickets, on retire l'ID 't1' pour laisser Supabase générer un UUID, ou on le garde si c'est du text
             await supabase.from('tickets').insert(MOCK_TICKETS.map(({id, ...rest}) => ({...rest, status: rest.status || 'OUVERT'})));
             await supabase.from('checks').insert(MOCK_CHECKS.map(({id, ...rest}) => rest));
             await supabase.from('maintenance').insert(MOCK_MAINTENANCE.map(({id, ...rest}) => rest));
-            
             alert("Données initialisées !");
             window.location.reload();
-        } catch (e: any) {
-            console.error("Erreur seed:", e);
-            alert(`Erreur : ${e.message}`);
-        }
+        } catch (e: any) { alert(`Erreur : ${e.message}`); }
     }
   };
 
   const copySchemaToClipboard = () => {
     navigator.clipboard.writeText(SUPABASE_SCHEMA_SQL);
-    alert("Script SQL copié ! \n\n1. Allez dans votre projet Supabase\n2. Ouvrez l'éditeur SQL\n3. Collez et exécutez le script pour créer les tables.");
+    alert("Script SQL copié ! Allez dans l'éditeur SQL Supabase et exécutez-le.");
   };
 
-  // Persistance Session
   useEffect(() => {
     const storedSession = localStorage.getItem('mcl_session_user');
-    const storedPasswords = localStorage.getItem('mcl_passwords');
-    const storedClubs = localStorage.getItem('mcl_clubs');
-
-    if (storedSession) {
-      try {
-        const user = JSON.parse(storedSession);
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } catch (e) {
-        localStorage.removeItem('mcl_session_user');
-      }
-    }
-    if (storedPasswords) setUserPasswords(JSON.parse(storedPasswords));
-    if (storedClubs) setClubs(JSON.parse(storedClubs));
+    if (storedSession) { try { const user = JSON.parse(storedSession); setCurrentUser(user); setIsAuthenticated(true); } catch (e) { localStorage.removeItem('mcl_session_user'); } }
+    const storedPasswords = localStorage.getItem('mcl_passwords'); if (storedPasswords) setUserPasswords(JSON.parse(storedPasswords));
+    const storedClubs = localStorage.getItem('mcl_clubs'); if (storedClubs) setClubs(JSON.parse(storedClubs));
   }, []);
 
   useEffect(() => localStorage.setItem('mcl_passwords', JSON.stringify(userPasswords)), [userPasswords]);
   useEffect(() => localStorage.setItem('mcl_clubs', JSON.stringify(clubs)), [clubs]);
 
-  // Notification Logic
   const sendNotification = (title: string, message: string, type: 'TICKET' | 'CHECK' | 'MAINTENANCE' | 'PLANNING', linkTo?: string) => {
-    const newNotif: AppNotification = {
-      id: `n${Date.now()}`,
-      title,
-      message,
-      type,
-      date: new Date().toISOString(),
-      read: false,
-      linkTo
-    };
+    const newNotif: AppNotification = { id: `n${Date.now()}`, title, message, type, date: new Date().toISOString(), read: false, linkTo };
     setNotifications(prev => [newNotif, ...prev]);
-
-    if (currentUser?.preferences.browserPush && Notification.permission === "granted") {
-      new Notification(title, { body: message, icon: '/favicon.ico', tag: 'mcl' });
-    }
+    if (currentUser?.preferences.browserPush && Notification.permission === "granted") { new Notification(title, { body: message, icon: '/favicon.ico', tag: 'mcl' }); }
   };
 
-  // Auth Handlers
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
     const userList = users.length > 0 ? users : MOCK_USERS;
     const foundUser = userList.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
     if (foundUser) {
         const storedPass = userPasswords[foundUser.id] || (foundUser.id === 'admin_fixed' ? 'Marielis1338!' : '123456');
-        if (storedPass === password) {
-             setCurrentUser(foundUser);
-             setIsAuthenticated(true);
-             localStorage.setItem('mcl_session_user', JSON.stringify(foundUser));
-             return true;
-        }
+        if (storedPass === password) { setCurrentUser(foundUser); setIsAuthenticated(true); localStorage.setItem('mcl_session_user', JSON.stringify(foundUser)); return true; }
     }
     return false;
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    setActiveTab('dashboard');
-    localStorage.removeItem('mcl_session_user');
-  };
+  const handleLogout = () => { setIsAuthenticated(false); setCurrentUser(null); setActiveTab('dashboard'); localStorage.removeItem('mcl_session_user'); };
 
-  // ----------------------------------------------------------------------
-  // CRUD HANDLERS (SUPABASE)
-  // ----------------------------------------------------------------------
-  // Les handlers restent identiques mais utilisent supabase
-
-  // TICKETS
   const handleCreateTicket = async (newTicketData: Partial<Ticket>) => {
     if (!currentUser) return;
     try {
-        await supabase.from('tickets').insert([{
-            ...newTicketData,
-            createdAt: new Date().toISOString(),
-            images: newTicketData.images || [],
-            status: TicketStatus.OPEN,
-            deleted: false,
-            history: [{ date: new Date().toISOString(), user: currentUser.name, action: 'CREATION', details: 'Ticket créé' }]
-        }]);
-        if ((newTicketData.urgency === Urgency.HIGH || newTicketData.urgency === Urgency.CRITICAL) && currentUser?.preferences.tickets) {
-            sendNotification(`Nouveau Ticket Urgent`, `Ticket créé`, 'TICKET');
-        }
+        await supabase.from('tickets').insert([{ ...newTicketData, createdAt: new Date().toISOString(), images: newTicketData.images || [], status: TicketStatus.OPEN, deleted: false, history: [{ date: new Date().toISOString(), user: currentUser.name, action: 'CREATION', details: 'Ticket créé' }] }]);
+        if ((newTicketData.urgency === Urgency.HIGH || newTicketData.urgency === Urgency.CRITICAL) && currentUser?.preferences.tickets) { sendNotification(`Nouveau Ticket Urgent`, `Ticket créé`, 'TICKET'); }
     } catch (e) { console.error(e); }
   };
 
@@ -365,10 +145,7 @@ const App: React.FC = () => {
     if (!currentUser) return;
     try {
         const { id, ...data } = updatedTicketData;
-        await supabase.from('tickets').update({
-            ...data,
-            history: [...(data.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'MODIFICATION', details: 'Modification des détails' }]
-        }).eq('id', id);
+        await supabase.from('tickets').update({ ...data, history: [...(data.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'MODIFICATION', details: 'Modification' }] }).eq('id', id);
     } catch (e) { console.error(e); }
   };
 
@@ -378,9 +155,8 @@ const App: React.FC = () => {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) return;
         await supabase.from('tickets').update({
-            status: TicketStatus.CANCELLED,
             deleted: true,
-            history: [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'DELETION', details: 'Ticket supprimé' }]
+            history: [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'DELETION', details: 'Mis à la corbeille' }]
         }).eq('id', ticketId);
     } catch (e) { console.error(e); }
   };
@@ -389,139 +165,44 @@ const App: React.FC = () => {
     if (!currentUser) return;
     const ticket = tickets.find(t => t.id === id);
     if (!ticket) return;
-    try {
-        await supabase.from('tickets').update({
-            deleted: false,
-            status: TicketStatus.OPEN,
-            history: [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'RESTORATION' }]
-        }).eq('id', id);
-    } catch (e) { console.error(e); }
+    try { await supabase.from('tickets').update({ deleted: false, history: [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'RESTORATION' }] }).eq('id', id); } catch (e) { console.error(e); }
   };
 
-  const handlePermanentDeleteTicket = async (id: string) => {
-    try { await supabase.from('tickets').delete().eq('id', id); } catch (e) { console.error(e); }
-  };
+  const handlePermanentDeleteTicket = async (id: string) => { try { await supabase.from('tickets').delete().eq('id', id); } catch (e) { console.error(e); } };
 
   const handleUpdateTicketStatus = async (id: string, status: TicketStatus) => {
     if (!currentUser) return;
     const ticket = tickets.find(t => t.id === id);
     if (!ticket) return;
-    try {
-        await supabase.from('tickets').update({
-            status,
-            history: [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'STATUS_CHANGE', details: `Statut: ${status}` }]
-        }).eq('id', id);
-    } catch (e) { console.error(e); }
+    try { await supabase.from('tickets').update({ status, history: [...(ticket.history || []), { date: new Date().toISOString(), user: currentUser.name, action: 'STATUS_CHANGE', details: `Statut: ${status}` }] }).eq('id', id); } catch (e) { console.error(e); }
   };
 
-  // CHECKS
-  const handleCreateCheck = async (newCheckData: Partial<PeriodicCheck>) => {
-    try { await supabase.from('checks').insert([{ ...newCheckData, status: CheckStatus.UPCOMING, checklistItems: newCheckData.checklistItems || [], deleted: false }]); } catch (e) { console.error(e); }
-  };
-  const handleEditCheck = async (updatedCheck: PeriodicCheck) => {
-    try { const { id, ...data } = updatedCheck; await supabase.from('checks').update(data).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handleUpdateCheck = async (id: string, items: any[], status: CheckStatus) => {
-    try { await supabase.from('checks').update({ checklistItems: items, status }).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handleDeleteCheck = async (id: string) => {
-    try { await supabase.from('checks').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handleRestoreCheck = async (id: string) => {
-    try { await supabase.from('checks').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handlePermanentDeleteCheck = async (id: string) => {
-    try { await supabase.from('checks').delete().eq('id', id); } catch (e) { console.error(e); }
-  };
-
-  // MAINTENANCE
-  const handleAddMaintenance = async (event: Partial<MaintenanceEvent>) => {
-    try { await supabase.from('maintenance').insert([{ notifyOnDashboard: false, title: '', date: '', description: '', checklist: [], deleted: false, ...event }]); } catch (e) { console.error(e); }
-  };
-  const handleEditMaintenance = async (event: MaintenanceEvent) => {
-    try { const { id, ...data } = event; await supabase.from('maintenance').update(data).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handleDeleteMaintenance = async (id: string) => {
-    try { await supabase.from('maintenance').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handleRestoreMaintenance = async (id: string) => {
-    try { await supabase.from('maintenance').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handlePermanentDeleteMaintenance = async (id: string) => {
-    try { await supabase.from('maintenance').delete().eq('id', id); } catch (e) { console.error(e); }
-  };
-
-  // PLANNING
-  const handleAddPlanningEvent = async (event: Partial<PlanningEvent>) => {
-    try { await supabase.from('planning').insert([{ ...event, deleted: false, createdBy: currentUser?.id }]); } catch (e) { console.error(e); }
-  };
-  const handleEditPlanningEvent = async (event: PlanningEvent) => {
-    try { const { id, ...data } = event; await supabase.from('planning').update(data).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handleDeletePlanningEvent = async (id: string) => {
-    try { await supabase.from('planning').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handleRestorePlanningEvent = async (id: string) => {
-    try { await supabase.from('planning').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); }
-  };
-  const handlePermanentDeletePlanningEvent = async (id: string) => {
-    try { await supabase.from('planning').delete().eq('id', id); } catch (e) { console.error(e); }
-  };
-
-  // DOCUMENTS
-  const handleAddDocument = async (docData: Partial<DocumentFile>) => {
-    try { await supabase.from('documents').insert([{ ...docData }]); } catch (e) { console.error(e); }
-  };
-  const handleDeleteDocument = async (id: string) => {
-    try { await supabase.from('documents').delete().eq('id', id); } catch (e) { console.error(e); }
-  };
-
-  // USERS
-  const handleAddUser = async (user: Partial<User>, password?: string) => {
-    try {
-        const { data, error } = await supabase.from('users').insert([{
-            ...user,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random`,
-            clubIds: user.clubIds || [],
-            preferences: user.preferences || { tickets: true, checks: true, maintenance: true, browserPush: false }
-        }]).select();
-        
-        if (data && data.length > 0) {
-            const userId = data[0].id;
-            if (password) setUserPasswords(prev => ({ ...prev, [userId]: password }));
-            else setUserPasswords(prev => ({ ...prev, [userId]: '123456' }));
-        }
-    } catch (e) { console.error(e); }
-  };
-  const handleEditUser = async (updatedUser: User, password?: string) => {
-    try {
-        const { id, ...data } = updatedUser;
-        await supabase.from('users').update(data).eq('id', id);
-        if (password && password.trim() !== '') setUserPasswords(prev => ({ ...prev, [id]: password }));
-        if (currentUser && id === currentUser.id) {
-            const newUser = { ...updatedUser };
-            setCurrentUser(newUser);
-            localStorage.setItem('mcl_session_user', JSON.stringify(newUser));
-        }
-    } catch (e) { console.error(e); }
-  };
-  const handleDeleteUser = async (userId: string) => {
-    try { await supabase.from('users').delete().eq('id', userId); } catch (e) { console.error(e); }
-  };
-  const handleDeleteUserPassword = (userId: string) => {
-    const newPasswords = {...userPasswords};
-    delete newPasswords[userId];
-    setUserPasswords(newPasswords);
-  };
-
-  // SETTINGS
+  const handleCreateCheck = async (newCheckData: Partial<PeriodicCheck>) => { try { await supabase.from('checks').insert([{ ...newCheckData, status: CheckStatus.UPCOMING, checklistItems: newCheckData.checklistItems || [], deleted: false }]); } catch (e) { console.error(e); } };
+  const handleEditCheck = async (updatedCheck: PeriodicCheck) => { try { const { id, ...data } = updatedCheck; await supabase.from('checks').update(data).eq('id', id); } catch (e) { console.error(e); } };
+  const handleUpdateCheck = async (id: string, items: any[], status: CheckStatus) => { try { await supabase.from('checks').update({ checklistItems: items, status }).eq('id', id); } catch (e) { console.error(e); } };
+  const handleDeleteCheck = async (id: string) => { try { await supabase.from('checks').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); } };
+  const handleRestoreCheck = async (id: string) => { try { await supabase.from('checks').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); } };
+  const handlePermanentDeleteCheck = async (id: string) => { try { await supabase.from('checks').delete().eq('id', id); } catch (e) { console.error(e); } };
+  const handleAddMaintenance = async (event: Partial<MaintenanceEvent>) => { try { await supabase.from('maintenance').insert([{ notifyOnDashboard: false, title: '', date: '', description: '', checklist: [], deleted: false, ...event }]); } catch (e) { console.error(e); } };
+  const handleEditMaintenance = async (event: MaintenanceEvent) => { try { const { id, ...data } = event; await supabase.from('maintenance').update(data).eq('id', id); } catch (e) { console.error(e); } };
+  const handleDeleteMaintenance = async (id: string) => { try { await supabase.from('maintenance').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); } };
+  const handleRestoreMaintenance = async (id: string) => { try { await supabase.from('maintenance').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); } };
+  const handlePermanentDeleteMaintenance = async (id: string) => { try { await supabase.from('maintenance').delete().eq('id', id); } catch (e) { console.error(e); } };
+  const handleAddPlanningEvent = async (event: Partial<PlanningEvent>) => { try { await supabase.from('planning').insert([{ ...event, deleted: false, createdBy: currentUser?.id }]); } catch (e) { console.error(e); } };
+  const handleEditPlanningEvent = async (event: PlanningEvent) => { try { const { id, ...data } = event; await supabase.from('planning').update(data).eq('id', id); } catch (e) { console.error(e); } };
+  const handleDeletePlanningEvent = async (id: string) => { try { await supabase.from('planning').update({ deleted: true }).eq('id', id); } catch (e) { console.error(e); } };
+  const handleRestorePlanningEvent = async (id: string) => { try { await supabase.from('planning').update({ deleted: false }).eq('id', id); } catch (e) { console.error(e); } };
+  const handlePermanentDeletePlanningEvent = async (id: string) => { try { await supabase.from('planning').delete().eq('id', id); } catch (e) { console.error(e); } };
+  const handleAddDocument = async (docData: Partial<DocumentFile>) => { try { await supabase.from('documents').insert([{ ...docData }]); } catch (e) { console.error(e); } };
+  const handleDeleteDocument = async (id: string) => { try { await supabase.from('documents').delete().eq('id', id); } catch (e) { console.error(e); } };
+  const handleAddUser = async (user: Partial<User>, password?: string) => { try { const { data } = await supabase.from('users').insert([{ ...user, avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random`, clubIds: user.clubIds || [], preferences: user.preferences || { tickets: true, checks: true, maintenance: true, browserPush: false } }]).select(); if (data && data.length > 0) { const userId = data[0].id; if (password) setUserPasswords(prev => ({ ...prev, [userId]: password })); else setUserPasswords(prev => ({ ...prev, [userId]: '123456' })); } } catch (e) { console.error(e); } };
+  const handleEditUser = async (updatedUser: User, password?: string) => { try { const { id, ...data } = updatedUser; await supabase.from('users').update(data).eq('id', id); if (password && password.trim() !== '') setUserPasswords(prev => ({ ...prev, [id]: password })); if (currentUser && id === currentUser.id) { const newUser = { ...updatedUser }; setCurrentUser(newUser); localStorage.setItem('mcl_session_user', JSON.stringify(newUser)); } } catch (e) { console.error(e); } };
+  const handleDeleteUser = async (userId: string) => { try { await supabase.from('users').delete().eq('id', userId); } catch (e) { console.error(e); } };
   const handleAddClub = (club: Club) => setClubs([...clubs, club]);
   const handleDeleteClub = (clubId: string) => setClubs(clubs.filter(c => c.id !== clubId));
   const handleUpdateClubSpaces = (clubId: string, spaces: string[]) => setClubs(clubs.map(c => c.id === clubId ? { ...c, spaces } : c));
   const handleUpdateFailureTypes = (trade: TradeType, failures: string[]) => setFailureTypes({ ...failureTypes, [trade]: failures });
   const handleUpdatePreferences = (prefs: NotificationPreferences) => { if(currentUser) handleEditUser({ ...currentUser, preferences: prefs }); };
-
-  // SPECIFICATIONS & ARTISANS
   const handleAddSpecification = async (spec: Partial<Specification>) => { await supabase.from('specifications').insert([spec]); };
   const handleEditSpecification = async (spec: Specification) => { const { id, ...d } = spec; await supabase.from('specifications').update(d).eq('id', id); };
   const handleDeleteSpecification = async (id: string) => { await supabase.from('specifications').delete().eq('id', id); };
@@ -531,16 +212,13 @@ const App: React.FC = () => {
   const handleMarkNotificationAsRead = (id: string) => setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
   const handleMarkAllNotificationsAsRead = () => setNotifications(notifications.map(n => ({ ...n, read: true })));
 
-  // View Router
   const renderContent = () => {
     if (!currentUser) return null;
-
-    const activeTickets = tickets.filter(t => !t.deleted && t.status !== TicketStatus.CANCELLED);
+    const activeTickets = tickets.filter(t => !t.deleted);
     const activeChecks = checks.filter(c => !c.deleted);
     const activeMaintenance = maintenanceEvents.filter(m => !m.deleted);
     const activePlanning = planningEvents.filter(p => !p.deleted);
-
-    const deletedTicketsList = tickets.filter(t => t.deleted || t.status === TicketStatus.CANCELLED);
+    const deletedTicketsList = tickets.filter(t => t.deleted);
     const deletedChecksList = checks.filter(c => c.deleted);
     const deletedMaintenanceList = maintenanceEvents.filter(m => m.deleted);
     const deletedPlanningList = planningEvents.filter(p => p.deleted);
@@ -555,57 +233,24 @@ const App: React.FC = () => {
       case 'financial': return <FinancialManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={handleAddDocument} onDeleteDocument={handleDeleteDocument} />;
       case 'maintenance': return <MaintenanceSchedule tickets={activeTickets} checks={activeChecks} maintenanceEvents={activeMaintenance} clubs={clubs} currentUser={currentUser} onAddEvent={handleAddMaintenance} onEditEvent={handleEditMaintenance} onDeleteEvent={handleDeleteMaintenance} />;
       case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={handleAddArtisan} onEditArtisan={handleEditArtisan} onDeleteArtisan={handleDeleteArtisan} />;
-      case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={handleAddUser} onEditUser={handleEditUser} onDeleteUser={handleDeleteUser} onDeletePassword={handleDeleteUserPassword} />;
+      case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={handleAddUser} onEditUser={handleEditUser} onDeleteUser={handleDeleteUser} />;
       case 'recycle_bin': return <RecycleBin deletedTickets={deletedTicketsList} deletedChecks={deletedChecksList} deletedMaintenance={deletedMaintenanceList} deletedPlanning={deletedPlanningList} currentUser={currentUser} onRestoreTicket={handleRestoreTicket} onRestoreCheck={handleRestoreCheck} onRestoreMaintenance={handleRestoreMaintenance} onRestorePlanning={handleRestorePlanningEvent} onPermanentDeleteTicket={handlePermanentDeleteTicket} onPermanentDeleteCheck={handlePermanentDeleteCheck} onPermanentDeleteMaintenance={handlePermanentDeleteMaintenance} onPermanentDeletePlanning={handlePermanentDeletePlanningEvent} />;
       case 'settings': return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={handleAddClub} onDeleteClub={handleDeleteClub} onUpdateClubSpaces={handleUpdateClubSpaces} onUpdateFailureTypes={handleUpdateFailureTypes} userPreferences={currentUser.preferences} onUpdatePreferences={handleUpdatePreferences} />;
       default: return <Dashboard tickets={activeTickets} checks={activeChecks} clubs={clubs} currentUser={currentUser} />;
     }
   };
 
-  if (!isAuthenticated || !currentUser) {
-    return <Login onLogin={handleLogin} />;
-  }
+  if (!isAuthenticated || !currentUser) return <Login onLogin={handleLogin} />;
 
   return (
-    <Layout 
-      user={currentUser} 
-      onLogout={handleLogout} 
-      activeTab={activeTab} 
-      onTabChange={setActiveTab}
-      notifications={notifications}
-      onMarkNotificationAsRead={handleMarkNotificationAsRead}
-      onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
-    >
-      {/* Banner si tables manquantes */}
+    <Layout user={currentUser} onLogout={handleLogout} activeTab={activeTab} onTabChange={setActiveTab} notifications={notifications} onMarkNotificationAsRead={handleMarkNotificationAsRead} onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}>
       {setupRequired && (
         <div className="bg-orange-600 text-white p-4 rounded-lg mb-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg animate-fade-in">
-            <div className="flex items-start gap-3">
-               <div className="bg-white/20 p-2 rounded-full">
-                 <AlertTriangle size={24} />
-               </div>
-               <div>
-                  <p className="font-bold text-lg">Base de données incomplète</p>
-                  <p className="text-sm text-orange-100">Les tables nécessaires n'existent pas dans votre projet Supabase. L'application utilise les données de démo.</p>
-               </div>
-            </div>
-            <button 
-                onClick={copySchemaToClipboard}
-                className="bg-white text-orange-600 px-4 py-3 rounded font-bold hover:bg-gray-100 transition flex items-center gap-2 whitespace-nowrap shadow-md"
-            >
-                <Database size={18} />
-                Copier le script SQL d'installation
-                <Copy size={16} className="ml-1" />
-            </button>
+            <div className="flex items-start gap-3"><div className="bg-white/20 p-2 rounded-full"><AlertTriangle size={24} /></div><div><p className="font-bold text-lg">Base de données incomplète</p><p className="text-sm text-orange-100">Tables manquantes dans Supabase.</p></div></div>
+            <button onClick={copySchemaToClipboard} className="bg-white text-orange-600 px-4 py-3 rounded font-bold hover:bg-gray-100 transition flex items-center gap-2 whitespace-nowrap shadow-md"><Database size={18} />Copier le script SQL<Copy size={16} className="ml-1" /></button>
         </div>
       )}
-
-      {/* Bouton pour charger les données dans Supabase si vide mais configuré */}
-      {(!setupRequired && (!tickets || tickets.length === 0)) && (
-        <div className="bg-emerald-600 text-white p-2 text-center text-sm cursor-pointer hover:bg-emerald-700 rounded mb-4" onClick={seedDatabase}>
-            Base Supabase vide ? Cliquez ici pour charger les données de démonstration.
-        </div>
-      )}
-      
+      {(!setupRequired && (!tickets || tickets.length === 0)) && <div className="bg-emerald-600 text-white p-2 text-center text-sm cursor-pointer hover:bg-emerald-700 rounded mb-4" onClick={seedDatabase}>Charger les données de démonstration.</div>}
       {renderContent()}
     </Layout>
   );
