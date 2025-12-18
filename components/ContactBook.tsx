@@ -14,8 +14,6 @@ interface ContactBookProps {
 const ContactBook: React.FC<ContactBookProps> = ({ artisans, currentUser, onAddArtisan, onDeleteArtisan, onEditArtisan }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTrade, setFilterTrade] = useState<string>('ALL');
-  
-  // Modal State
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Artisan>>({
@@ -29,27 +27,15 @@ const ContactBook: React.FC<ContactBookProps> = ({ artisans, currentUser, onAddA
   });
 
   const filteredArtisans = artisans.filter(a => {
-    const matchesSearch = 
-      a.companyName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      a.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.trade.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const matchesSearch = a.companyName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          a.contactName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTrade = filterTrade === 'ALL' || a.trade === filterTrade;
-    
     return matchesSearch && matchesTrade;
   });
 
   const handleOpenCreate = () => {
     setIsEditing(false);
-    setFormData({
-      companyName: '',
-      contactName: '',
-      trade: TradeType.ELECTRICITY,
-      phone: '',
-      email: '',
-      address: '',
-      notes: ''
-    });
+    setFormData({ companyName: '', contactName: '', trade: TradeType.ELECTRICITY, phone: '', email: '', address: '', notes: '' });
     setShowModal(true);
   };
 
@@ -61,223 +47,108 @@ const ContactBook: React.FC<ContactBookProps> = ({ artisans, currentUser, onAddA
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isEditing && formData.id) {
-      onEditArtisan(formData as Artisan);
-    } else {
-      onAddArtisan(formData);
-    }
+    if (isEditing && formData.id) onEditArtisan(formData as Artisan);
+    else onAddArtisan(formData);
     setShowModal(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Supprimer ce contact du répertoire ?")) {
-      onDeleteArtisan(id);
-    }
-  };
-
   return (
-    <div className="space-y-6 h-full flex flex-col">
-      {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 bg-gym-light p-4 rounded-lg shadow-lg">
-        <div className="flex flex-col gap-1">
-             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Briefcase className="text-gym-yellow" />
-                Répertoire des Artisans
-             </h2>
-             <p className="text-xs text-gray-400">Gérez les contacts de vos prestataires externes.</p>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between gap-4 bg-brand-light p-5 rounded-2xl border border-gray-700 shadow-2xl items-center">
+        <div className="flex items-center gap-4">
+             <div className="bg-brand-yellow/10 p-3 rounded-xl border border-brand-yellow/30"><Briefcase className="text-brand-yellow" size={24} /></div>
+             <h2 className="text-xl font-black text-white uppercase tracking-tight">Répertoire Artisans</h2>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="relative group flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 transition-colors group-focus-within:text-brand-yellow" size={18} />
             <input 
               type="text" 
               placeholder="Rechercher..." 
-              className="bg-gym-dark border border-gray-600 rounded pl-10 pr-4 py-2 text-white focus:border-gym-yellow outline-none w-full sm:w-64"
+              className="bg-brand-dark border border-gray-600 rounded-xl pl-10 pr-4 py-2.5 text-white focus:border-brand-yellow outline-none w-full font-bold transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
-          <select 
-            className="bg-gym-dark border border-gray-600 rounded px-3 py-2 text-white outline-none"
-            value={filterTrade}
-            onChange={(e) => setFilterTrade(e.target.value)}
-          >
-            <option value="ALL">Tous les métiers</option>
-            {Object.values(TradeType).map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-
-          <button 
-            onClick={handleOpenCreate}
-            className="bg-gym-yellow text-gym-dark font-bold px-4 py-2 rounded flex items-center justify-center gap-2 hover:bg-yellow-400 transition"
-          >
-            <Plus size={18} /> Ajouter
-          </button>
+          <button onClick={handleOpenCreate} className="bg-brand-yellow text-brand-dark font-black uppercase tracking-tight px-6 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-yellow-400 transition shadow-xl shadow-brand-yellow/20"><Plus size={18} /> Ajouter</button>
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10">
         {filteredArtisans.map(artisan => (
-          <div key={artisan.id} className="bg-gym-light rounded-xl border border-gray-700 shadow-lg hover:border-gym-yellow/50 transition group flex flex-col h-full">
-            <div className="p-5 flex-1">
-              <div className="flex justify-between items-start mb-2">
-                 <div className="bg-gym-dark text-gym-yellow text-xs font-bold px-2 py-1 rounded border border-gray-600">
+          <div key={artisan.id} className="bg-brand-light rounded-2xl border border-gray-700 shadow-2xl hover:border-brand-yellow/40 transition-all group flex flex-col h-full overflow-hidden">
+            <div className="p-6 flex-1 flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                 <div className="bg-brand-dark text-brand-yellow text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border border-gray-700 shadow-inner">
                     {artisan.trade}
                  </div>
-                 {currentUser.role !== UserRole.TECHNICIAN && ( // Allow Edit/Delete for Admin/Manager
-                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                     <button onClick={() => handleOpenEdit(artisan)} className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded"><Edit2 size={14}/></button>
-                     <button onClick={() => handleDelete(artisan.id)} className="p-1.5 text-red-400 hover:bg-red-500/10 rounded"><Trash2 size={14}/></button>
-                   </div>
-                 )}
+                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+                    <button onClick={() => handleOpenEdit(artisan)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition"><Edit2 size={16}/></button>
+                    <button onClick={() => { if(window.confirm("Supprimer ?")) onDeleteArtisan(artisan.id); }} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition"><Trash2 size={16}/></button>
+                 </div>
               </div>
               
-              <h3 className="text-lg font-bold text-white mb-1 truncate" title={artisan.companyName}>{artisan.companyName}</h3>
-              <div className="flex items-center gap-2 text-gray-400 text-sm mb-4">
-                 <UserIcon size={14} />
+              <h3 className="text-xl font-black text-white mb-1 uppercase tracking-tight leading-tight">{artisan.companyName}</h3>
+              <div className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-widest mb-6 border-b border-gray-700 pb-4">
+                 <UserIcon size={12} className="text-brand-yellow" />
                  <span>{artisan.contactName}</span>
               </div>
 
-              <div className="space-y-3">
-                <a href={`tel:${artisan.phone}`} className="flex items-center gap-3 text-gray-300 hover:text-gym-yellow transition p-2 bg-gym-dark/50 rounded">
-                  <Phone size={16} />
-                  <span className="font-mono">{artisan.phone}</span>
+              <div className="space-y-3 flex-1">
+                <a href={`tel:${artisan.phone}`} className="flex items-center gap-3 text-gray-300 hover:text-brand-yellow transition-all p-3 bg-brand-dark/40 rounded-xl border border-gray-700/50 hover:border-brand-yellow/30 group/item">
+                  <div className="bg-gray-700 group-hover/item:bg-brand-yellow group-hover/item:text-brand-dark p-2 rounded-lg transition-all"><Phone size={14} /></div>
+                  <span className="font-mono font-bold tracking-wider text-sm">{artisan.phone}</span>
                 </a>
-                <a href={`mailto:${artisan.email}`} className="flex items-center gap-3 text-gray-300 hover:text-gym-yellow transition p-2 bg-gym-dark/50 rounded">
-                  <Mail size={16} />
-                  <span className="truncate text-sm">{artisan.email}</span>
+                <a href={`mailto:${artisan.email}`} className="flex items-center gap-3 text-gray-300 hover:text-brand-yellow transition-all p-3 bg-brand-dark/40 rounded-xl border border-gray-700/50 hover:border-brand-yellow/30 group/item">
+                  <div className="bg-gray-700 group-hover/item:bg-brand-yellow group-hover/item:text-brand-dark p-2 rounded-lg transition-all"><Mail size={14} /></div>
+                  <span className="truncate text-xs font-bold uppercase tracking-tighter">{artisan.email}</span>
                 </a>
-                <div className="flex items-start gap-3 text-gray-400 text-sm p-2">
-                  <MapPin size={16} className="mt-0.5 shrink-0" />
-                  <span className="line-clamp-2">{artisan.address}</span>
-                </div>
               </div>
-              
-              {artisan.notes && (
-                  <div className="mt-4 pt-3 border-t border-gray-700">
-                      <p className="text-xs text-gray-500 italic line-clamp-2">"{artisan.notes}"</p>
-                  </div>
-              )}
             </div>
           </div>
         ))}
-        
-        {filteredArtisans.length === 0 && (
-           <div className="col-span-full flex flex-col items-center justify-center p-12 text-gray-500 border border-dashed border-gray-700 rounded-xl">
-              <Briefcase size={48} className="mb-4 opacity-50" />
-              <p className="text-lg">Aucun artisan trouvé</p>
-              <p className="text-sm">Modifiez vos filtres ou ajoutez un nouveau contact.</p>
-           </div>
-        )}
       </div>
 
-      {/* Modal Form */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-gym-light w-full max-w-lg rounded-xl shadow-2xl border border-gray-600 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b border-gray-700 sticky top-0 bg-gym-light z-10">
-              <h2 className="text-xl font-bold text-white">
-                {isEditing ? 'Modifier Artisan' : 'Ajouter Artisan'}
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[95vh]">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
+              <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">
+                {isEditing ? 'Modifier Fiche' : 'Nouvel Artisan'}
               </h2>
-              <button onClick={() => setShowModal(false)}><X className="text-gray-400 hover:text-white" /></button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-brand-dark transition-colors"><X size={24} /></button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Nom de la société</label>
-                <input 
-                  type="text" 
-                  required
-                  className="w-full bg-gym-dark border border-gray-600 rounded p-2 text-white focus:border-gym-yellow outline-none"
-                  value={formData.companyName}
-                  onChange={e => setFormData({...formData, companyName: e.target.value})}
-                  placeholder="Ex: Elec Express"
-                />
+            <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+              <div className="space-y-1">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Société</label>
+                <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} placeholder="Nom de l'entreprise" />
               </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Nom du contact</label>
-                <input 
-                  type="text" 
-                  required
-                  className="w-full bg-gym-dark border border-gray-600 rounded p-2 text-white focus:border-gym-yellow outline-none"
-                  value={formData.contactName}
-                  onChange={e => setFormData({...formData, contactName: e.target.value})}
-                  placeholder="Ex: Jean Dupont"
-                />
+              <div className="space-y-1">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Contact Référent</label>
+                <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.contactName} onChange={e => setFormData({...formData, contactName: e.target.value})} placeholder="Prénom NOM" />
               </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Métier</label>
-                <select 
-                  className="w-full bg-gym-dark border border-gray-600 rounded p-2 text-white outline-none"
-                  value={formData.trade}
-                  onChange={e => setFormData({...formData, trade: e.target.value as TradeType})}
-                >
+              <div className="space-y-1">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Métier</label>
+                <select className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none cursor-pointer focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.trade} onChange={e => setFormData({...formData, trade: e.target.value as TradeType})}>
                   {Object.values(TradeType).map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Téléphone</label>
-                  <input 
-                    type="tel" 
-                    required
-                    className="w-full bg-gym-dark border border-gray-600 rounded p-2 text-white focus:border-gym-yellow outline-none"
-                    value={formData.phone}
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
-                  />
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Téléphone</label>
+                  <input type="tel" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Email</label>
-                  <input 
-                    type="email" 
-                    required
-                    className="w-full bg-gym-dark border border-gray-600 rounded p-2 text-white focus:border-gym-yellow outline-none"
-                    value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
-                  />
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</label>
+                  <input type="email" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                 </div>
               </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Adresse</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-gym-dark border border-gray-600 rounded p-2 text-white focus:border-gym-yellow outline-none"
-                  value={formData.address}
-                  onChange={e => setFormData({...formData, address: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Notes / Informations</label>
-                <textarea 
-                  rows={3}
-                  className="w-full bg-gym-dark border border-gray-600 rounded p-2 text-white focus:border-gym-yellow outline-none"
-                  value={formData.notes}
-                  onChange={e => setFormData({...formData, notes: e.target.value})}
-                  placeholder="Tarifs, horaires, numéro de contrat..."
-                />
-              </div>
-
-              <div className="pt-4 flex gap-3">
-                 <button 
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 bg-transparent border border-gray-600 text-gray-300 py-3 rounded hover:bg-gray-800 transition"
-                >
-                  Annuler
-                </button>
-                <button 
-                  type="submit"
-                  className="flex-1 bg-gym-yellow text-gym-dark font-bold py-3 rounded hover:bg-yellow-400 transition"
-                >
-                  {isEditing ? 'Enregistrer' : 'Ajouter'}
-                </button>
+              <div className="pt-6 flex gap-4 border-t border-gray-100 sticky bottom-0 bg-white">
+                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-100 text-gray-500 font-black uppercase py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
+                <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase py-4 rounded-xl hover:bg-yellow-400 shadow-xl shadow-brand-yellow/30 transition-all">{isEditing ? 'Enregistrer' : 'Confirmer'}</button>
               </div>
             </form>
           </div>

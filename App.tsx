@@ -25,7 +25,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [dbStatus, setDbStatus] = useState<'CONNECTED' | 'DEMO' | 'ERROR'>('DEMO');
   
-  // États des données initialisés avec les Mocks pour une visibilité immédiate
+  // États des données initialisés avec les Mocks
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [userPasswords, setUserPasswords] = useState<Record<string, string>>(() => {
     const saved = localStorage.getItem('mcl_passwords');
@@ -70,15 +70,16 @@ const App: React.FC = () => {
       ]);
 
       setDbStatus('CONNECTED');
-      if (results[0].data) setClubs(results[0].data);
-      if (results[1].data) setTickets(results[1].data);
-      if (results[2].data) setChecks(results[2].data);
-      if (results[3].data) setMaintenanceEvents(results[3].data);
-      if (results[4].data) setPlanningEvents(results[4].data);
-      if (results[5].data) setDocs(results[5].data);
-      if (results[6].data) setSpecifications(results[6].data);
-      if (results[7].data) setArtisans(results[7].data);
-      if (results[8].data) setUsers(results[8].data);
+      // On ne met à jour que si des données existent en base pour ne pas vider l'app inutilement
+      if (results[0].data && results[0].data.length > 0) setClubs(results[0].data);
+      if (results[1].data && results[1].data.length > 0) setTickets(results[1].data);
+      if (results[2].data && results[2].data.length > 0) setChecks(results[2].data);
+      if (results[3].data && results[3].data.length > 0) setMaintenanceEvents(results[3].data);
+      if (results[4].data && results[4].data.length > 0) setPlanningEvents(results[4].data);
+      if (results[5].data && results[5].data.length > 0) setDocs(results[5].data);
+      if (results[6].data && results[6].data.length > 0) setSpecifications(results[6].data);
+      if (results[7].data && results[7].data.length > 0) setArtisans(results[7].data);
+      if (results[8].data && results[8].data.length > 0) setUsers(results[8].data);
     } catch (e: any) {
       console.error("Erreur sync:", e);
       setDbStatus('ERROR');
@@ -98,115 +99,147 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // --- SYNC HELPERS ---
+  // --- SYNC HELPERS (Optimized) ---
   const syncOperation = async (table: string, method: 'insert' | 'update' | 'delete', data: any, id?: string) => {
-    if (!supabase) return; // En mode démo, on ne fait rien car on met déjà à jour l'état localement
+    if (!supabase) return; 
     
     try {
       if (method === 'insert') await supabase.from(table).insert([data]);
       if (method === 'update') await supabase.from(table).update(data).eq('id', id || data.id);
       if (method === 'delete') await supabase.from(table).delete().eq('id', id);
-      fetchData();
+      // fetchData() supprimé ici pour éviter l'écrasement par des listes vides lors de l'insertion
     } catch (e) {
       console.error(`Erreur sync ${table}:`, e);
     }
   };
 
-  // --- HANDLERS AVEC MISE À JOUR LOCALE IMMÉDIATE ---
+  // --- HANDLERS ---
 
-  // TICKETS
   const handleTicketCreate = (t: Partial<Ticket>) => {
-    const newTicket = { ...t, id: `t_${Date.now()}`, createdAt: new Date().toISOString() } as Ticket;
+    const newTicket = { 
+      ...t, 
+      id: `t_${Date.now()}`, 
+      createdAt: new Date().toISOString(),
+      history: [{ date: new Date().toISOString(), user: currentUser?.name || 'Système', action: 'CREATION' }],
+      images: t.images || [],
+      deleted: false
+    } as Ticket;
     setTickets(prev => [newTicket, ...prev]);
     syncOperation('tickets', 'insert', newTicket);
   };
+
   const handleTicketEdit = (t: Ticket) => {
     setTickets(prev => prev.map(item => item.id === t.id ? t : item));
     syncOperation('tickets', 'update', t);
   };
+
   const handleTicketDelete = (id: string) => {
     setTickets(prev => prev.filter(t => t.id !== id));
     syncOperation('tickets', 'update', { deleted: true }, id);
   };
+
   const handleTicketStatus = (id: string, status: TicketStatus) => {
     setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
     syncOperation('tickets', 'update', { status }, id);
   };
 
-  // CHECKS
   const handleCheckCreate = (c: Partial<PeriodicCheck>) => {
-    const newCheck = { ...c, id: `ch_${Date.now()}` } as PeriodicCheck;
+    const newCheck = { 
+      ...c, 
+      id: `ch_${Date.now()}`,
+      history: [],
+      deleted: false
+    } as PeriodicCheck;
     setChecks(prev => [newCheck, ...prev]);
     syncOperation('checks', 'insert', newCheck);
   };
-  const handleCheckEdit = (c: PeriodicCheck) => {
-    setChecks(prev => prev.map(item => item.id === c.id ? c : item));
-    syncOperation('checks', 'update', c);
-  };
-  const handleCheckDelete = (id: string) => {
-    setChecks(prev => prev.filter(c => c.id !== id));
-    syncOperation('checks', 'update', { deleted: true }, id);
-  };
+
   const handleCheckUpdate = (id: string, items: any[], status: CheckStatus) => {
     setChecks(prev => prev.map(c => c.id === id ? { ...c, checklistItems: items, status } : c));
     syncOperation('checks', 'update', { checklistItems: items, status, lastChecked: status === CheckStatus.COMPLETED ? new Date().toISOString() : undefined }, id);
   };
 
-  // MAINTENANCE
+  // Added handleCheckEdit fix
+  const handleCheckEdit = (c: PeriodicCheck) => {
+    setChecks(prev => prev.map(item => item.id === c.id ? c : item));
+    syncOperation('checks', 'update', c);
+  };
+
+  // Added handleCheckDelete fix
+  const handleCheckDelete = (id: string) => {
+    setChecks(prev => prev.filter(c => c.id !== id));
+    syncOperation('checks', 'update', { deleted: true }, id);
+  };
+
   const handleMaintenanceAdd = (m: Partial<MaintenanceEvent>) => {
-    const newEvent = { ...m, id: `m_${Date.now()}` } as MaintenanceEvent;
+    const newEvent = { ...m, id: `m_${Date.now()}`, deleted: false } as MaintenanceEvent;
     setMaintenanceEvents(prev => [newEvent, ...prev]);
     syncOperation('maintenance', 'insert', newEvent);
   };
+
+  // Added handleMaintenanceEdit fix
   const handleMaintenanceEdit = (m: MaintenanceEvent) => {
     setMaintenanceEvents(prev => prev.map(item => item.id === m.id ? m : item));
     syncOperation('maintenance', 'update', m);
   };
+
+  // Added handleMaintenanceDelete fix
   const handleMaintenanceDelete = (id: string) => {
     setMaintenanceEvents(prev => prev.filter(m => m.id !== id));
     syncOperation('maintenance', 'update', { deleted: true }, id);
   };
 
-  // PLANNING
-  const handlePlanningAdd = (p: Partial<PlanningEvent>) => {
-    const newEvent = { ...p, id: `p_${Date.now()}` } as PlanningEvent;
-    setPlanningEvents(prev => [newEvent, ...prev]);
+  // Added handlePlanningAdd fix
+  const handlePlanningAdd = (e: Partial<PlanningEvent>) => {
+    const newEvent = { ...e, id: `pe_${Date.now()}`, deleted: false } as PlanningEvent;
+    setPlanningEvents(prev => [...prev, newEvent]);
     syncOperation('planning', 'insert', newEvent);
   };
-  const handlePlanningEdit = (p: PlanningEvent) => {
-    setPlanningEvents(prev => prev.map(item => item.id === p.id ? p : item));
-    syncOperation('planning', 'update', p);
+
+  // Added handlePlanningEdit fix
+  const handlePlanningEdit = (e: PlanningEvent) => {
+    setPlanningEvents(prev => prev.map(item => item.id === e.id ? e : item));
+    syncOperation('planning', 'update', e);
   };
+
+  // Added handlePlanningDelete fix
   const handlePlanningDelete = (id: string) => {
-    setPlanningEvents(prev => prev.filter(p => p.id !== id));
+    setPlanningEvents(prev => prev.filter(e => e.id !== id));
     syncOperation('planning', 'update', { deleted: true }, id);
   };
 
-  // USERS
+  // Added handleClubAdd fix
+  const handleClubAdd = (c: Club) => {
+    setClubs(prev => [...prev, c]);
+    syncOperation('clubs', 'insert', c);
+  };
+
+  // Added handleClubDelete fix
+  const handleClubDelete = (id: string) => {
+    setClubs(prev => prev.filter(c => c.id !== id));
+    syncOperation('clubs', 'delete', null, id);
+  };
+
   const handleUserAdd = (u: Partial<User>, p?: string) => {
-    const newUser = { ...u, id: u.id || `u_${Date.now()}` } as User;
+    const newUser = { 
+      ...u, 
+      id: u.id || `u_${Date.now()}`,
+      preferences: { tickets: true, checks: true, maintenance: true, browserPush: false }
+    } as User;
     if (p) setUserPasswords(prev => ({ ...prev, [newUser.id]: p }));
     setUsers(prev => [...prev, newUser]);
     syncOperation('users', 'insert', newUser);
   };
+
   const handleUserEdit = (u: User, p?: string) => {
     if (p) setUserPasswords(prev => ({ ...prev, [u.id]: p }));
     setUsers(prev => prev.map(user => user.id === u.id ? u : user));
     syncOperation('users', 'update', u);
   };
+
   const handleUserDelete = (id: string) => {
     setUsers(prev => prev.filter(u => u.id !== id));
     syncOperation('users', 'delete', null, id);
-  };
-
-  // CLUBS
-  const handleClubAdd = (c: Club) => {
-    setClubs(prev => [...prev, c]);
-    syncOperation('clubs', 'insert', c);
-  };
-  const handleClubDelete = (id: string) => {
-    setClubs(prev => prev.filter(c => c.id !== id));
-    syncOperation('clubs', 'delete', null, id);
   };
 
   // --- AUTH ---
@@ -225,7 +258,6 @@ const App: React.FC = () => {
 
   const handleLogout = () => { setIsAuthenticated(false); setCurrentUser(null); };
 
-  // --- RENDER ---
   const renderContent = () => {
     if (!currentUser) return null;
     const commonProps = { currentUser, tickets, checks, clubs, users };
@@ -261,19 +293,13 @@ const App: React.FC = () => {
           </div>
           <div>
             <h3 className="text-sm font-black uppercase tracking-widest text-white">
-              {dbStatus === 'CONNECTED' ? 'Connecté à Supabase' : 'Mode Démonstration'}
+              {dbStatus === 'CONNECTED' ? 'Supabase Connecté' : 'Mode Démonstration'}
             </h3>
             <p className="text-xs text-gray-400 font-medium">
-              {dbStatus === 'CONNECTED' ? 'Synchronisation Cloud Active.' : 'Données locales uniquement (Mocks).'}
+              {dbStatus === 'CONNECTED' ? 'Synchronisation Cloud Active.' : 'Les données créées sont conservées durant la session.'}
             </p>
           </div>
         </div>
-        {dbStatus === 'CONNECTED' && (
-          <div className="flex items-center gap-2 bg-green-500/20 px-3 py-1.5 rounded-full">
-            <DatabaseZap size={14} className="text-green-400" />
-            <span className="text-[10px] font-black text-green-400 uppercase">Live Sync</span>
-          </div>
-        )}
       </div>
       {renderContent()}
     </Layout>
