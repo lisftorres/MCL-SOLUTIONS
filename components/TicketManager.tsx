@@ -215,7 +215,6 @@ const TicketManager: React.FC<TicketManagerProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Barre de filtres */}
       <div className="flex flex-col md:flex-row justify-between gap-4 bg-brand-light p-4 rounded-lg items-center shadow-lg">
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
           <div className="relative group w-full sm:w-auto">
@@ -238,7 +237,6 @@ const TicketManager: React.FC<TicketManagerProps> = ({
         </button>
       </div>
 
-      {/* Grille des tickets */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredTickets.map(ticket => {
             const club = clubs.find(c => c.id === ticket.clubId);
@@ -336,7 +334,6 @@ const TicketManager: React.FC<TicketManagerProps> = ({
         })}
       </div>
 
-      {/* Modal de création/édition */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col animate-fade-in-up">
@@ -416,7 +413,7 @@ const TicketManager: React.FC<TicketManagerProps> = ({
               </div>
 
               <div className="pt-6 flex gap-4 sticky bottom-0 bg-white">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-100 text-gray-700 font-black uppercase tracking-tight py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-100 text-black font-black uppercase tracking-tight py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
                 <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase tracking-tight py-4 rounded-xl hover:bg-yellow-400 transition-all shadow-xl shadow-brand-yellow/30">
                     {isEditing ? 'Enregistrer' : 'Signaler le problème'}
                 </button>

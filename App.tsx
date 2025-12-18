@@ -25,7 +25,6 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [dbStatus, setDbStatus] = useState<'CONNECTED' | 'DEMO' | 'ERROR'>('DEMO');
   
-  // États des données initialisés avec les Mocks
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [userPasswords, setUserPasswords] = useState<Record<string, string>>(() => {
     const saved = localStorage.getItem('mcl_passwords');
@@ -53,7 +52,6 @@ const App: React.FC = () => {
     localStorage.setItem('mcl_passwords', JSON.stringify(userPasswords));
   }, [userPasswords]);
 
-  // --- CHARGEMENT DES DONNÉES ---
   const fetchData = async () => {
     if (!supabase) return;
     try {
@@ -70,7 +68,6 @@ const App: React.FC = () => {
       ]);
 
       setDbStatus('CONNECTED');
-      // On ne met à jour que si des données existent en base pour ne pas vider l'app inutilement
       if (results[0].data && results[0].data.length > 0) setClubs(results[0].data);
       if (results[1].data && results[1].data.length > 0) setTickets(results[1].data);
       if (results[2].data && results[2].data.length > 0) setChecks(results[2].data);
@@ -99,21 +96,16 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // --- SYNC HELPERS (Optimized) ---
   const syncOperation = async (table: string, method: 'insert' | 'update' | 'delete', data: any, id?: string) => {
     if (!supabase) return; 
-    
     try {
       if (method === 'insert') await supabase.from(table).insert([data]);
       if (method === 'update') await supabase.from(table).update(data).eq('id', id || data.id);
       if (method === 'delete') await supabase.from(table).delete().eq('id', id);
-      // fetchData() supprimé ici pour éviter l'écrasement par des listes vides lors de l'insertion
     } catch (e) {
       console.error(`Erreur sync ${table}:`, e);
     }
   };
-
-  // --- HANDLERS ---
 
   const handleTicketCreate = (t: Partial<Ticket>) => {
     const newTicket = { 
@@ -144,12 +136,7 @@ const App: React.FC = () => {
   };
 
   const handleCheckCreate = (c: Partial<PeriodicCheck>) => {
-    const newCheck = { 
-      ...c, 
-      id: `ch_${Date.now()}`,
-      history: [],
-      deleted: false
-    } as PeriodicCheck;
+    const newCheck = { ...c, id: `ch_${Date.now()}`, history: [], deleted: false } as PeriodicCheck;
     setChecks(prev => [newCheck, ...prev]);
     syncOperation('checks', 'insert', newCheck);
   };
@@ -159,13 +146,11 @@ const App: React.FC = () => {
     syncOperation('checks', 'update', { checklistItems: items, status, lastChecked: status === CheckStatus.COMPLETED ? new Date().toISOString() : undefined }, id);
   };
 
-  // Added handleCheckEdit fix
   const handleCheckEdit = (c: PeriodicCheck) => {
     setChecks(prev => prev.map(item => item.id === c.id ? c : item));
     syncOperation('checks', 'update', c);
   };
 
-  // Added handleCheckDelete fix
   const handleCheckDelete = (id: string) => {
     setChecks(prev => prev.filter(c => c.id !== id));
     syncOperation('checks', 'update', { deleted: true }, id);
@@ -177,44 +162,37 @@ const App: React.FC = () => {
     syncOperation('maintenance', 'insert', newEvent);
   };
 
-  // Added handleMaintenanceEdit fix
   const handleMaintenanceEdit = (m: MaintenanceEvent) => {
     setMaintenanceEvents(prev => prev.map(item => item.id === m.id ? m : item));
     syncOperation('maintenance', 'update', m);
   };
 
-  // Added handleMaintenanceDelete fix
   const handleMaintenanceDelete = (id: string) => {
     setMaintenanceEvents(prev => prev.filter(m => m.id !== id));
     syncOperation('maintenance', 'update', { deleted: true }, id);
   };
 
-  // Added handlePlanningAdd fix
   const handlePlanningAdd = (e: Partial<PlanningEvent>) => {
     const newEvent = { ...e, id: `pe_${Date.now()}`, deleted: false } as PlanningEvent;
     setPlanningEvents(prev => [...prev, newEvent]);
     syncOperation('planning', 'insert', newEvent);
   };
 
-  // Added handlePlanningEdit fix
   const handlePlanningEdit = (e: PlanningEvent) => {
     setPlanningEvents(prev => prev.map(item => item.id === e.id ? e : item));
     syncOperation('planning', 'update', e);
   };
 
-  // Added handlePlanningDelete fix
   const handlePlanningDelete = (id: string) => {
     setPlanningEvents(prev => prev.filter(e => e.id !== id));
     syncOperation('planning', 'update', { deleted: true }, id);
   };
 
-  // Added handleClubAdd fix
   const handleClubAdd = (c: Club) => {
     setClubs(prev => [...prev, c]);
     syncOperation('clubs', 'insert', c);
   };
 
-  // Added handleClubDelete fix
   const handleClubDelete = (id: string) => {
     setClubs(prev => prev.filter(c => c.id !== id));
     syncOperation('clubs', 'delete', null, id);
@@ -223,8 +201,9 @@ const App: React.FC = () => {
   const handleUserAdd = (u: Partial<User>, p?: string) => {
     const newUser = { 
       ...u, 
-      id: u.id || `u_${Date.now()}`,
-      preferences: { tickets: true, checks: true, maintenance: true, browserPush: false }
+      id: `u_${Date.now()}`,
+      preferences: { tickets: true, checks: true, maintenance: true, browserPush: false },
+      clubIds: u.clubIds || []
     } as User;
     if (p) setUserPasswords(prev => ({ ...prev, [newUser.id]: p }));
     setUsers(prev => [...prev, newUser]);
@@ -242,7 +221,6 @@ const App: React.FC = () => {
     syncOperation('users', 'delete', null, id);
   };
 
-  // --- AUTH ---
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
     const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (foundUser) {

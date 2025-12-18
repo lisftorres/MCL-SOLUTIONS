@@ -328,7 +328,7 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                        {formData.signatures?.technician ? (
                           <div>
                              <p className="text-black font-black text-sm">{formData.signatures.technician.name}</p>
-                             <p className="text-[10px] text-gray-600 font-bold">{new Date(formData.signatures.technician.date).toLocaleString('fr-FR')}</p>
+                             <p className="text-[10px] text-black font-bold">{new Date(formData.signatures.technician.date).toLocaleString('fr-FR')}</p>
                           </div>
                        ) : (
                           <button 
@@ -347,7 +347,7 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                        {formData.signatures?.manager ? (
                           <div>
                              <p className="text-black font-black text-sm">{formData.signatures.manager.name}</p>
-                             <p className="text-[10px] text-gray-600 font-bold">{new Date(formData.signatures.manager.date).toLocaleString('fr-FR')}</p>
+                             <p className="text-[10px] text-black font-bold">{new Date(formData.signatures.manager.date).toLocaleString('fr-FR')}</p>
                           </div>
                        ) : (
                           <button 

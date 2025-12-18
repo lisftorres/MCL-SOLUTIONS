@@ -154,7 +154,7 @@ const GeneralPlanning: React.FC<GeneralPlanningProps> = ({
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up">
             <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
-              <h2 className="text-xl font-black text-black uppercase tracking-tight">{isEditing ? 'Modifier Événement' : 'Planifier Événement'}</h2>
+              <h2 className="text-xl font-black text-black uppercase tracking-tight">Modifier Événement</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
             </div>
             
