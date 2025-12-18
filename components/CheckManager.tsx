@@ -190,37 +190,37 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[95vh]">
             <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
-              <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">{isEditing ? 'Modifier la vérification' : 'Programmer une vérification'}</h2>
+              <h2 className="text-xl font-black text-black uppercase tracking-tight">{isEditing ? 'Modifier la vérification' : 'Programmer une vérification'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-black transition-colors"><X size={24}/></button>
             </div>
             <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="col-span-full space-y-1">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Titre de la vérification</label>
+                  <label className="block text-[10px] font-black text-black uppercase tracking-widest">Titre de la vérification</label>
                   <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="Ex: Contrôle Extincteurs"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Club</label>
+                   <label className="block text-[10px] font-black text-black uppercase tracking-widest">Club</label>
                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all cursor-pointer" value={formData.clubId} onChange={e => setFormData({...formData, clubId: e.target.value})}>
-                      {allowedClubs.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      {allowedClubs.map(c => <option key={c.id} value={c.id} className="text-black">{c.name}</option>)}
                    </select>
                 </div>
                 <div className="space-y-1">
-                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Espace</label>
+                   <label className="block text-[10px] font-black text-black uppercase tracking-widest">Espace</label>
                    <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.space} onChange={e => setFormData({...formData, space: e.target.value})} placeholder="Ex: Local Technique"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Métier</label>
+                   <label className="block text-[10px] font-black text-black uppercase tracking-widest">Métier</label>
                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all cursor-pointer" value={formData.trade} onChange={e => setFormData({...formData, trade: e.target.value as TradeType})}>
-                      {Object.values(TradeType).map(t => <option key={t} value={t}>{t}</option>)}
+                      {Object.values(TradeType).map(t => <option key={t} value={t} className="text-black">{t}</option>)}
                    </select>
                 </div>
                 <div className="space-y-1">
-                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Fréquence (Mois)</label>
+                   <label className="block text-[10px] font-black text-black uppercase tracking-widest">Fréquence (Mois)</label>
                    <input type="number" min="1" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.frequencyMonths} onChange={e => setFormData({...formData, frequencyMonths: parseInt(e.target.value)})}/>
                 </div>
                 <div className="col-span-full space-y-1">
-                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Prochaine échéance</label>
+                   <label className="block text-[10px] font-black text-black uppercase tracking-widest">Prochaine échéance</label>
                    <input type="date" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.nextDueDate ? String(formData.nextDueDate).split('T')[0] : ''} onChange={e => setFormData({...formData, nextDueDate: e.target.value})}/>
                 </div>
               </div>
@@ -239,7 +239,7 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 animate-fade-in-up text-center border border-red-50">
             <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-red-100"><AlertTriangle className="text-red-500" size={40} /></div>
-            <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-2">Attention</h3>
+            <h3 className="text-2xl font-black text-black uppercase tracking-tight mb-2">Attention</h3>
             <p className="text-gray-500 font-bold mb-8 leading-relaxed uppercase text-xs tracking-widest">Voulez-vous supprimer définitivement ce contrôle ?</p>
             <div className="flex gap-4">
               <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 bg-gray-100 text-gray-500 font-black uppercase py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
@@ -255,10 +255,10 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
             <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-fade-in-up">
                <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50 rounded-t-2xl">
                   <div>
-                    <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight">Historique des contrôles</h3>
+                    <h3 className="text-xl font-black text-black uppercase tracking-tight">Historique des contrôles</h3>
                     <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">{selectedCheckForHistory.title}</p>
                   </div>
-                  <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-brand-dark transition-colors"><X size={24} /></button>
+                  <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
                </div>
                <div className="p-8 overflow-y-auto custom-scrollbar bg-white">
                   {(!selectedCheckForHistory.history || selectedCheckForHistory.history.length === 0) ? (
@@ -272,9 +272,9 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
                               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(log.date).toLocaleDateString('fr-FR')}</span>
                               <div className="flex items-center gap-3">
                                 <span className={`text-[9px] px-2.5 py-1 rounded-full font-black uppercase tracking-tighter ${log.status === CheckStatus.COMPLETED ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-50 text-gray-500'}`}>{log.status === CheckStatus.COMPLETED ? 'Validé' : log.status}</span>
-                                <span className="text-xs text-brand-dark font-black uppercase tracking-tighter flex items-center gap-2"><UserIcon size={12} className="text-brand-yellow" /> {log.technicianName}</span>
+                                <span className="text-xs text-black font-black uppercase tracking-tighter flex items-center gap-2"><UserIcon size={12} className="text-brand-yellow" /> {log.technicianName}</span>
                               </div>
-                              {log.notes && <div className="mt-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-600 font-bold italic shadow-inner">"{log.notes}"</div>}
+                              {log.notes && <div className="mt-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-black font-bold italic shadow-inner">"{log.notes}"</div>}
                            </div>
                         </div>
                       ))}

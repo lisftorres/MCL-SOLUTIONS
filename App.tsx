@@ -199,13 +199,20 @@ const App: React.FC = () => {
   };
 
   const handleUserAdd = (u: Partial<User>, p?: string) => {
+    const userId = `u_${Date.now()}`;
     const newUser = { 
       ...u, 
-      id: `u_${Date.now()}`,
+      id: userId,
       preferences: { tickets: true, checks: true, maintenance: true, browserPush: false },
       clubIds: u.clubIds || []
     } as User;
-    if (p) setUserPasswords(prev => ({ ...prev, [newUser.id]: p }));
+    
+    if (p) {
+      setUserPasswords(prev => ({ ...prev, [userId]: p }));
+    } else {
+      setUserPasswords(prev => ({ ...prev, [userId]: "123456" }));
+    }
+    
     setUsers(prev => [...prev, newUser]);
     syncOperation('users', 'insert', newUser);
   };

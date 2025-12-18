@@ -347,7 +347,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
             </div>
             <form onSubmit={handleCreateClub} className="p-8 space-y-6">
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Nom du club</label>
+                <label className="block text-[10px] font-black text-black uppercase tracking-widest">Nom du club</label>
                 <input 
                   type="text" 
                   required
@@ -358,7 +358,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Adresse complète</label>
+                <label className="block text-[10px] font-black text-black uppercase tracking-widest">Adresse complète</label>
                 <input 
                   type="text" 
                   required
