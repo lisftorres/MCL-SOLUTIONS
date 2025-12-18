@@ -34,11 +34,11 @@ export const MOCK_USERS: User[] = [
   // Admins
   { 
     id: 'admin_fixed', 
-    name: 'Lis Torres', 
+    name: 'FELICIO TORRES Lisandro', 
     email: 'lisftorres@gmail.com', 
     role: UserRole.ADMIN, 
     clubIds: ALL_CLUB_IDS, 
-    avatar: 'https://ui-avatars.com/api/?name=Lis+Torres&background=F7CE3E&color=373F47',
+    avatar: 'https://ui-avatars.com/api/?name=FELICIO+TORRES+Lisandro&background=F7CE3E&color=373F47',
     preferences: { tickets: true, checks: true, maintenance: true, browserPush: true }
   },
   { 

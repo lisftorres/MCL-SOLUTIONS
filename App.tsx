@@ -29,7 +29,14 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [userPasswords, setUserPasswords] = useState<Record<string, string>>(() => {
     const saved = localStorage.getItem('mcl_passwords');
-    return saved ? JSON.parse(saved) : { 'admin_fixed': 'Marielis1338!' };
+    return saved ? JSON.parse(saved) : { 
+      'admin_fixed': '10121986', 
+      'user_marie': '123456', 
+      'u_jonas': '123456', 
+      'u_leanne': '123456', 
+      'u_brian': '123456', 
+      'u_julien': '123456' 
+    };
   });
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -102,7 +109,7 @@ const App: React.FC = () => {
   // --- SYNC HELPERS ---
   const syncOperation = async (table: string, method: 'insert' | 'update' | 'delete', data: any, id?: string) => {
     if (!supabase) {
-      fetchData(); // Refresh UI logic for demo mode
+      fetchData(); // Rafraîchissement local pour le mode démo
       return;
     }
     if (method === 'insert') await supabase.from(table).insert([data]);
@@ -165,7 +172,8 @@ const App: React.FC = () => {
 
   // --- AUTH ---
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
-    const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const userList = users.length > 0 ? users : MOCK_USERS;
+    const foundUser = userList.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (foundUser) {
       const storedPass = userPasswords[foundUser.id] || "123456";
       if (storedPass === password) { 
