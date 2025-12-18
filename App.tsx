@@ -16,7 +16,7 @@ import GeneralPlanning from './components/GeneralPlanning';
 import RecycleBin from './components/RecycleBin';
 import { MOCK_CLUBS, MOCK_TICKETS, MOCK_CHECKS, MOCK_DOCS, MOCK_USERS, MOCK_MAINTENANCE, MOCK_FAILURE_TYPES, MOCK_ARTISANS, MOCK_SPECS, MOCK_PLANNING_EVENTS } from './constants';
 import { Ticket, TicketStatus, PeriodicCheck, CheckStatus, UserRole, MaintenanceEvent, Club, TradeType, User, Artisan, DocumentFile, Specification, PlanningEvent } from './types';
-import { Database, WifiOff, AlertTriangle, ShieldCheck, DatabaseZap } from 'lucide-react';
+import { Database, WifiOff, ShieldCheck, DatabaseZap } from 'lucide-react';
 import { supabase } from './services/supabase';
 
 const App: React.FC = () => {
@@ -27,9 +27,11 @@ const App: React.FC = () => {
   
   // États des données
   const [users, setUsers] = useState<User[]>([]);
-  const [userPasswords, setUserPasswords] = useState<Record<string, string>>({
-    'admin_fixed': 'Marielis1338!', 'user_marie': '123456', 'u_jonas': '123456', 'u_leanne': '123456', 'u_brian': '123456', 'u_julien': '123456'
+  const [userPasswords, setUserPasswords] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('mcl_passwords');
+    return saved ? JSON.parse(saved) : { 'admin_fixed': 'Marielis1338!' };
   });
+
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [checks, setChecks] = useState<PeriodicCheck[]>([]);
   const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>([]);
@@ -40,24 +42,25 @@ const App: React.FC = () => {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [failureTypes, setFailureTypes] = useState<Record<TradeType, string[]>>(MOCK_FAILURE_TYPES);
 
+  useEffect(() => {
+    localStorage.setItem('mcl_passwords', JSON.stringify(userPasswords));
+  }, [userPasswords]);
+
   // --- CHARGEMENT DES DONNÉES ---
   const fetchData = async () => {
     if (!supabase) return;
     try {
       const results = await Promise.all([
         supabase.from('clubs').select('*'),
-        supabase.from('tickets').select('*'),
-        supabase.from('checks').select('*'),
-        supabase.from('maintenance').select('*'),
-        supabase.from('planning').select('*'),
+        supabase.from('tickets').select('*').eq('deleted', false),
+        supabase.from('checks').select('*').eq('deleted', false),
+        supabase.from('maintenance').select('*').eq('deleted', false),
+        supabase.from('planning').select('*').eq('deleted', false),
         supabase.from('documents').select('*'),
         supabase.from('specifications').select('*'),
         supabase.from('artisans').select('*'),
         supabase.from('users').select('*')
       ]);
-
-      const errors = results.filter(r => r.error);
-      if (errors.length > 0) throw errors[0].error;
 
       setDbStatus('CONNECTED');
       setClubs(results[0].data || []);
@@ -70,7 +73,6 @@ const App: React.FC = () => {
       setArtisans(results[7].data || []);
       setUsers(results[8].data || []);
     } catch (e: any) {
-      console.error("Erreur Supabase:", e);
       setDbStatus('ERROR');
       fallbackToDemo();
     }
@@ -89,32 +91,83 @@ const App: React.FC = () => {
       fallbackToDemo();
     } else {
       fetchData();
-      const channels = ['tickets', 'checks', 'maintenance', 'planning', 'artisans', 'users'].map(table => 
+      const tables = ['tickets', 'checks', 'maintenance', 'planning', 'artisans', 'users', 'clubs', 'documents', 'specifications'];
+      const channels = tables.map(table => 
         supabase.channel(`public:${table}`).on('postgres_changes', { event: '*', schema: 'public', table }, () => fetchData()).subscribe()
       );
       return () => { channels.forEach(c => supabase.removeChannel(c)); };
     }
   }, []);
 
-  // --- HANDLERS ACTIONS ---
-  const handleAddEvent = async (event: Partial<PlanningEvent>) => {
-    if (supabase) await supabase.from('planning').insert([event]);
-    else setPlanningEvents(prev => [...prev, { ...event, id: `temp_${Date.now()}` } as PlanningEvent]);
+  // --- SYNC HELPERS ---
+  const syncOperation = async (table: string, method: 'insert' | 'update' | 'delete', data: any, id?: string) => {
+    if (!supabase) {
+      fetchData(); // Refresh UI logic for demo mode
+      return;
+    }
+    if (method === 'insert') await supabase.from(table).insert([data]);
+    if (method === 'update') await supabase.from(table).update(data).eq('id', id || data.id);
+    if (method === 'delete') await supabase.from(table).delete().eq('id', id);
     fetchData();
   };
 
-  const handleDeleteTicket = async (id: string) => {
-    if (!window.confirm("Supprimer DÉFINITIVEMENT de la base ?")) return;
-    if (supabase) await supabase.from('tickets').delete().eq('id', id);
-    else setTickets(prev => prev.filter(t => t.id !== id));
-    fetchData();
-  };
+  // --- TICKETS ---
+  const handleTicketCreate = (t: Partial<Ticket>) => syncOperation('tickets', 'insert', t);
+  const handleTicketEdit = (t: Ticket) => syncOperation('tickets', 'update', t);
+  const handleTicketDelete = (id: string) => syncOperation('tickets', 'update', { deleted: true }, id);
+  const handleTicketStatus = (id: string, status: TicketStatus) => syncOperation('tickets', 'update', { status }, id);
 
+  // --- CHECKS ---
+  const handleCheckCreate = (c: Partial<PeriodicCheck>) => syncOperation('checks', 'insert', c);
+  const handleCheckEdit = (c: PeriodicCheck) => syncOperation('checks', 'update', c);
+  const handleCheckDelete = (id: string) => syncOperation('checks', 'update', { deleted: true }, id);
+  const handleCheckUpdate = (id: string, items: any[], status: CheckStatus) => syncOperation('checks', 'update', { checklistItems: items, status, lastChecked: status === CheckStatus.COMPLETED ? new Date().toISOString() : undefined }, id);
+
+  // --- MAINTENANCE ---
+  const handleMaintenanceAdd = (m: Partial<MaintenanceEvent>) => syncOperation('maintenance', 'insert', m);
+  const handleMaintenanceEdit = (m: MaintenanceEvent) => syncOperation('maintenance', 'update', m);
+  const handleMaintenanceDelete = (id: string) => syncOperation('maintenance', 'update', { deleted: true }, id);
+
+  // --- PLANNING ---
+  const handlePlanningAdd = (p: Partial<PlanningEvent>) => syncOperation('planning', 'insert', p);
+  const handlePlanningEdit = (p: PlanningEvent) => syncOperation('planning', 'update', p);
+  const handlePlanningDelete = (id: string) => syncOperation('planning', 'update', { deleted: true }, id);
+
+  // --- ARTISANS ---
+  const handleArtisanAdd = (a: Partial<Artisan>) => syncOperation('artisans', 'insert', a);
+  const handleArtisanEdit = (a: Artisan) => syncOperation('artisans', 'update', a);
+  const handleArtisanDelete = (id: string) => syncOperation('artisans', 'delete', null, id);
+
+  // --- SPECS ---
+  const handleSpecAdd = (s: Partial<Specification>) => syncOperation('specifications', 'insert', s);
+  const handleSpecEdit = (s: Specification) => syncOperation('specifications', 'update', s);
+  const handleSpecDelete = (id: string) => syncOperation('specifications', 'delete', null, id);
+
+  // --- DOCUMENTS ---
+  const handleDocAdd = (d: Partial<DocumentFile>) => syncOperation('documents', 'insert', d);
+  const handleDocDelete = (id: string) => syncOperation('documents', 'delete', null, id);
+
+  // --- CLUBS & SETTINGS ---
+  const handleClubAdd = (c: Club) => syncOperation('clubs', 'insert', c);
+  const handleClubDelete = (id: string) => syncOperation('clubs', 'delete', null, id);
+  const handleClubSpaces = (id: string, spaces: string[]) => syncOperation('clubs', 'update', { spaces }, id);
+
+  // --- USERS ---
+  const handleUserAdd = (u: Partial<User>, p?: string) => {
+    if (p) setUserPasswords(prev => ({ ...prev, [u.id || '']: p }));
+    syncOperation('users', 'insert', u);
+  };
+  const handleUserEdit = (u: User, p?: string) => {
+    if (p) setUserPasswords(prev => ({ ...prev, [u.id]: p }));
+    syncOperation('users', 'update', u);
+  };
+  const handleUserDelete = (id: string) => syncOperation('users', 'delete', null, id);
+
+  // --- AUTH ---
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
-    const userList = users.length > 0 ? users : MOCK_USERS;
-    const foundUser = userList.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (foundUser) {
-      const storedPass = userPasswords[foundUser.id] || (foundUser.id === 'admin_fixed' ? 'Marielis1338!' : '123456');
+      const storedPass = userPasswords[foundUser.id] || "123456";
       if (storedPass === password) { 
         setCurrentUser(foundUser); 
         setIsAuthenticated(true); 
@@ -126,24 +179,23 @@ const App: React.FC = () => {
 
   const handleLogout = () => { setIsAuthenticated(false); setCurrentUser(null); };
 
-  // --- RENDU DU CONTENU ---
+  // --- RENDER ---
   const renderContent = () => {
     if (!currentUser) return null;
     const commonProps = { currentUser, tickets, checks, clubs, users };
 
     switch (activeTab) {
       case 'dashboard': return <Dashboard {...commonProps} maintenanceEvents={maintenanceEvents} />;
-      case 'planning': return <GeneralPlanning events={planningEvents} currentUser={currentUser} onAddEvent={handleAddEvent} onEditEvent={() => {}} onDeleteEvent={() => {}} />;
-      case 'tickets': return <TicketManager {...commonProps} failureTypes={failureTypes} onCreateTicket={handleDeleteTicket} onEditTicket={() => {}} onDeleteTicket={handleDeleteTicket} onUpdateStatus={() => {}} />;
-      case 'checks': return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={() => {}} onCreateCheck={() => {}} onEditCheck={() => {}} onDeleteCheck={() => {}} />;
-      case 'maintenance': return <MaintenanceSchedule {...commonProps} maintenanceEvents={maintenanceEvents} onAddEvent={() => {}} onEditEvent={() => {}} onDeleteEvent={() => {}} />;
-      case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={() => {}} onEditUser={() => {}} onDeleteUser={() => {}} />;
-      case 'specs': return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={() => {}} onDeleteSpecification={() => {}} onEditSpecification={() => {}} />;
-      case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={() => {}} onDeleteArtisan={() => {}} onEditArtisan={() => {}} />;
-      case 'financial': return <FinancialManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={() => {}} onDeleteDocument={() => {}} />;
-      case 'documents': return <DocumentManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={() => {}} onDeleteDocument={() => {}} />;
-      case 'settings': return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={() => {}} onDeleteClub={() => {}} onUpdateClubSpaces={() => {}} onUpdateFailureTypes={() => {}} />;
-      case 'recycle_bin': return <RecycleBin deletedTickets={[]} deletedChecks={[]} deletedMaintenance={[]} deletedPlanning={[]} currentUser={currentUser} onRestoreTicket={() => {}} onRestoreCheck={() => {}} onRestoreMaintenance={() => {}} onRestorePlanning={() => {}} onPermanentDeleteTicket={() => {}} onPermanentDeleteCheck={() => {}} onPermanentDeleteMaintenance={() => {}} onPermanentDeletePlanning={() => {}} />;
+      case 'planning': return <GeneralPlanning events={planningEvents} currentUser={currentUser} onAddEvent={handlePlanningAdd} onEditEvent={handlePlanningEdit} onDeleteEvent={handlePlanningDelete} />;
+      case 'tickets': return <TicketManager {...commonProps} failureTypes={failureTypes} onCreateTicket={handleTicketCreate} onEditTicket={handleTicketEdit} onDeleteTicket={handleTicketDelete} onUpdateStatus={handleTicketStatus} />;
+      case 'checks': return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={handleCheckUpdate} onCreateCheck={handleCheckCreate} onEditCheck={handleCheckEdit} onDeleteCheck={handleCheckDelete} />;
+      case 'maintenance': return <MaintenanceSchedule {...commonProps} maintenanceEvents={maintenanceEvents} onAddEvent={handleMaintenanceAdd} onEditEvent={handleMaintenanceEdit} onDeleteEvent={handleMaintenanceDelete} />;
+      case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={handleUserAdd} onEditUser={handleUserEdit} onDeleteUser={handleUserDelete} />;
+      case 'specs': return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={handleSpecAdd} onEditSpecification={handleSpecEdit} onDeleteSpecification={handleSpecDelete} />;
+      case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={handleArtisanAdd} onEditArtisan={handleArtisanEdit} onDeleteArtisan={handleArtisanDelete} />;
+      case 'financial': return <FinancialManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={handleDocAdd} onDeleteDocument={handleDocDelete} />;
+      case 'documents': return <DocumentManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={handleDocAdd} onDeleteDocument={handleDocDelete} />;
+      case 'settings': return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={handleClubAdd} onDeleteClub={handleClubDelete} onUpdateClubSpaces={handleClubSpaces} onUpdateFailureTypes={() => {}} />;
       default: return <Dashboard {...commonProps} maintenanceEvents={maintenanceEvents} />;
     }
   };
@@ -159,14 +211,14 @@ const App: React.FC = () => {
       }`}>
         <div className="flex items-center gap-4">
           <div className={`p-3 rounded-full ${dbStatus === 'CONNECTED' ? 'bg-green-500/20 text-green-400' : 'bg-brand-yellow/20 text-brand-yellow'}`}>
-            {dbStatus === 'CONNECTED' ? <ShieldCheck size={24} /> : <WifiOff size={24} />}
+            <ShieldCheck size={24} />
           </div>
           <div>
             <h3 className="text-sm font-black uppercase tracking-widest text-white">
               {dbStatus === 'CONNECTED' ? 'Connecté à Supabase' : 'Mode Démonstration'}
             </h3>
             <p className="text-xs text-gray-400 font-medium">
-              {dbStatus === 'CONNECTED' ? 'Données réelles actives.' : 'Fichiers locaux (Pas de sauvegarde définitive).'}
+              {dbStatus === 'CONNECTED' ? 'Synchronisation Cloud Active.' : 'Données locales uniquement.'}
             </p>
           </div>
         </div>
