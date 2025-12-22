@@ -91,7 +91,7 @@ const UserManager: React.FC<UserManagerProps> = ({ users, clubs, userPasswords, 
             <div className="p-8 flex flex-col items-center border-b border-gray-700 relative bg-brand-darker/30">
               <img src={user.avatar} alt={user.name} className="w-20 h-20 rounded-full border-4 border-brand-yellow mb-4 object-cover shadow-2xl transition-transform group-hover:scale-105" />
               <h3 className="text-lg font-black text-white uppercase tracking-tight text-center">{user.name}</h3>
-              <p className="text-xs text-gray-400 flex items-center gap-2 mb-5 font-bold uppercase tracking-widest"><Mail size={12} className="text-brand-yellow" /> {user.email}</p>
+              <p className="text-xs text-gray-400 flex items-center gap-2 mb-5 font-black uppercase tracking-widest"><Mail size={12} className="text-brand-yellow" /> {user.email}</p>
               {getRoleBadge(user.role)}
               <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
                 <button onClick={() => handleOpenEdit(user)} className="p-2.5 text-blue-400 hover:bg-blue-500/20 rounded-xl transition"><Edit2 size={16} /></button>
@@ -121,7 +121,7 @@ const UserManager: React.FC<UserManagerProps> = ({ users, clubs, userPasswords, 
             <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
               <div className="space-y-1">
                 <label className="block text-[10px] font-black text-black uppercase tracking-widest">Nom complet</label>
-                <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Ex: Marie Ciappa" />
+                <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Ex: MARIE CIAPPA" />
               </div>
               <div className="space-y-1">
                 <label className="block text-[10px] font-black text-black uppercase tracking-widest">Adresse Email</label>
@@ -131,15 +131,15 @@ const UserManager: React.FC<UserManagerProps> = ({ users, clubs, userPasswords, 
                 <label className="block text-[10px] font-black text-black uppercase tracking-widest">Mot de passe</label>
                 <div className="relative">
                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                   <input type="text" required={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 text-black font-mono font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={password} onChange={e => setPassword(e.target.value)} placeholder={isEditing ? "Modifier si nécessaire..." : "Définir un mot de passe..."} />
+                   <input type="text" required={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 text-black font-mono font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={password} onChange={e => setPassword(e.target.value)} placeholder={isEditing ? "Modifier si nécessaire..." : "123456"} />
                 </div>
               </div>
               <div className="space-y-1">
                 <label className="block text-[10px] font-black text-black uppercase tracking-widest">Accès / Rôle</label>
                 <select className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all cursor-pointer" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as UserRole})}>
-                  <option value={UserRole.ADMIN}>Administrateur</option>
-                  <option value={UserRole.MANAGER}>Manager Club</option>
-                  <option value={UserRole.TECHNICIAN}>Technicien</option>
+                  <option value={UserRole.ADMIN} className="font-black text-black">Administrateur</option>
+                  <option value={UserRole.MANAGER} className="font-black text-black">Manager Club</option>
+                  <option value={UserRole.TECHNICIAN} className="font-black text-black">Technicien</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -154,7 +154,7 @@ const UserManager: React.FC<UserManagerProps> = ({ users, clubs, userPasswords, 
                 </div>
               </div>
               <div className="pt-6 flex gap-4 border-t border-gray-100 sticky bottom-0 bg-white">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-100 text-gray-500 font-black uppercase py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-100 text-black font-black uppercase py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
                 <button type="submit" disabled={isSubmitting} className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase py-4 rounded-xl hover:bg-yellow-400 shadow-xl shadow-brand-yellow/30 transition-all">
                   {isSubmitting ? 'Action...' : (isEditing ? 'Enregistrer' : 'Créer le compte')}
                 </button>

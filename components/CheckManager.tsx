@@ -173,7 +173,7 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
                       {check.checklistItems.map((item, idx) => (
                         <label key={idx} className="flex items-center space-x-4 p-4 bg-brand-dark rounded-xl border border-gray-700 cursor-pointer hover:border-brand-yellow/30 transition-all group">
                           <input type="checkbox" checked={item.checked} onChange={() => handleToggleItem(check.id, item.label)} className="w-6 h-6 rounded-lg border-gray-600 bg-gray-800 text-brand-yellow focus:ring-brand-yellow transition-all" />
-                          <span className={`text-sm font-bold uppercase tracking-tight transition-all ${item.checked ? 'text-gray-600 line-through' : 'text-gray-200 group-hover:text-white'}`}>{item.label}</span>
+                          <span className={`text-sm font-black uppercase tracking-tight transition-all ${item.checked ? 'text-gray-600 line-through' : 'text-gray-200 group-hover:text-white'}`}>{item.label}</span>
                         </label>
                       ))}
                     </div>
@@ -202,7 +202,7 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
                 <div className="space-y-1">
                    <label className="block text-[10px] font-black text-black uppercase tracking-widest">Club</label>
                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all cursor-pointer" value={formData.clubId} onChange={e => setFormData({...formData, clubId: e.target.value})}>
-                      {allowedClubs.map(c => <option key={c.id} value={c.id} className="text-black">{c.name}</option>)}
+                      {allowedClubs.map(c => <option key={c.id} value={c.id} className="text-black font-black">{c.name}</option>)}
                    </select>
                 </div>
                 <div className="space-y-1">
@@ -212,7 +212,7 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
                 <div className="space-y-1">
                    <label className="block text-[10px] font-black text-black uppercase tracking-widest">Métier</label>
                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all cursor-pointer" value={formData.trade} onChange={e => setFormData({...formData, trade: e.target.value as TradeType})}>
-                      {Object.values(TradeType).map(t => <option key={t} value={t} className="text-black">{t}</option>)}
+                      {Object.values(TradeType).map(t => <option key={t} value={t} className="text-black font-black">{t}</option>)}
                    </select>
                 </div>
                 <div className="space-y-1">
@@ -226,7 +226,7 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
               </div>
               
               <div className="pt-6 border-t border-gray-100 flex gap-4 sticky bottom-0 bg-white">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-100 text-gray-500 font-black uppercase py-4 rounded-xl transition-all">Annuler</button>
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-100 text-black font-black uppercase py-4 rounded-xl transition-all">Annuler</button>
                 <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase py-4 rounded-xl hover:bg-yellow-400 shadow-xl shadow-brand-yellow/30 transition-all">{isEditing ? 'Enregistrer' : 'Confirmer'}</button>
               </div>
             </form>
@@ -240,9 +240,9 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 animate-fade-in-up text-center border border-red-50">
             <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-red-100"><AlertTriangle className="text-red-500" size={40} /></div>
             <h3 className="text-2xl font-black text-black uppercase tracking-tight mb-2">Attention</h3>
-            <p className="text-gray-500 font-bold mb-8 leading-relaxed uppercase text-xs tracking-widest">Voulez-vous supprimer définitivement ce contrôle ?</p>
+            <p className="text-black font-black mb-8 leading-relaxed uppercase text-xs tracking-widest">Voulez-vous supprimer définitivement ce contrôle ?</p>
             <div className="flex gap-4">
-              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 bg-gray-100 text-gray-500 font-black uppercase py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
+              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 bg-gray-100 text-black font-black uppercase py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
               <button onClick={() => { if(checkToDelete) onDeleteCheck(checkToDelete); setShowDeleteConfirm(false); }} className="flex-1 bg-red-500 text-white font-black uppercase py-4 rounded-xl hover:bg-red-600 shadow-xl shadow-red-500/30 transition-all">Supprimer</button>
             </div>
           </div>
@@ -256,7 +256,7 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
                <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50 rounded-t-2xl">
                   <div>
                     <h3 className="text-xl font-black text-black uppercase tracking-tight">Historique des contrôles</h3>
-                    <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">{selectedCheckForHistory.title}</p>
+                    <p className="text-[10px] text-black font-black uppercase tracking-widest mt-1">{selectedCheckForHistory.title}</p>
                   </div>
                   <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
                </div>
@@ -269,12 +269,12 @@ const CheckManager: React.FC<CheckManagerProps> = ({ checks, clubs, user, onUpda
                         <div key={idx} className="relative pl-10 group">
                            <div className={`absolute -left-[14px] top-0 w-6 h-6 rounded-lg border-4 border-white shadow-md transition-transform group-hover:scale-110 ${log.status === CheckStatus.COMPLETED ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                            <div className="flex flex-col gap-2">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(log.date).toLocaleDateString('fr-FR')}</span>
+                              <span className="text-[10px] font-black text-black uppercase tracking-widest">{new Date(log.date).toLocaleDateString('fr-FR')}</span>
                               <div className="flex items-center gap-3">
                                 <span className={`text-[9px] px-2.5 py-1 rounded-full font-black uppercase tracking-tighter ${log.status === CheckStatus.COMPLETED ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-50 text-gray-500'}`}>{log.status === CheckStatus.COMPLETED ? 'Validé' : log.status}</span>
                                 <span className="text-xs text-black font-black uppercase tracking-tighter flex items-center gap-2"><UserIcon size={12} className="text-brand-yellow" /> {log.technicianName}</span>
                               </div>
-                              {log.notes && <div className="mt-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-black font-bold italic shadow-inner">"{log.notes}"</div>}
+                              {log.notes && <div className="mt-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-black font-black italic shadow-inner">"{log.notes}"</div>}
                            </div>
                         </div>
                       ))}

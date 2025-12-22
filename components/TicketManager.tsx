@@ -359,14 +359,14 @@ const TicketManager: React.FC<TicketManagerProps> = ({
               <div className="space-y-1">
                 <label className="block text-xs font-black text-black uppercase tracking-widest">Club concerné</label>
                 <select className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={ticketClub} onChange={e => handleClubChange(e.target.value)}>
-                  {allowedClubs.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {allowedClubs.map(c => <option key={c.id} value={c.id} className="text-black font-black">{c.name}</option>)}
                 </select>
               </div>
 
               <div className="space-y-1">
                 <label className="block text-xs font-black text-black uppercase tracking-widest">Zone / Espace</label>
                 <select className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={ticketSpace} onChange={e => setTicketSpace(e.target.value)}>
-                  {selectedClubSpaces.map(s => <option key={s} value={s}>{s}</option>)}
+                  {selectedClubSpaces.map(s => <option key={s} value={s} className="text-black font-black">{s}</option>)}
                 </select>
               </div>
 
@@ -374,13 +374,13 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                 <div className="space-y-1">
                   <label className="block text-xs font-black text-black uppercase tracking-widest">Métier</label>
                   <select className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={ticketTrade} onChange={e => setTicketTrade(e.target.value as TradeType)}>
-                    {Object.values(TradeType).map(t => <option key={t} value={t}>{t}</option>)}
+                    {Object.values(TradeType).map(t => <option key={t} value={t} className="text-black font-black">{t}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="block text-xs font-black text-black uppercase tracking-widest">Urgence</label>
                   <select className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={ticketUrgency} onChange={e => setTicketUrgency(e.target.value as Urgency)}>
-                    {Object.values(Urgency).map(u => <option key={u} value={u}>{u}</option>)}
+                    {Object.values(Urgency).map(u => <option key={u} value={u} className="text-black font-black">{u}</option>)}
                   </select>
                 </div>
               </div>
@@ -388,10 +388,10 @@ const TicketManager: React.FC<TicketManagerProps> = ({
               <div className="space-y-1">
                 <label className="block text-xs font-black text-black uppercase tracking-widest">Description précise</label>
                 <div className="relative">
-                  <textarea required rows={4} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-bold outline-none focus:ring-2 focus:ring-brand-yellow transition-all pr-12" value={ticketDesc} onChange={e => setTicketDesc(e.target.value)} placeholder="Quel est le problème ?" />
+                  <textarea required rows={4} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all pr-12" value={ticketDesc} onChange={e => setTicketDesc(e.target.value)} placeholder="Quel est le problème ?" />
                   <button type="button" onClick={handleAiAnalyze} disabled={!ticketDesc || aiLoading} className="absolute bottom-4 right-4 text-brand-yellow hover:scale-110 disabled:opacity-30 transition-all"><Sparkles size={28} className={aiLoading ? 'animate-spin' : ''} /></button>
                 </div>
-                {aiAdvice && <div className="mt-3 bg-brand-yellow/10 border border-brand-yellow/20 p-4 rounded-xl text-xs text-black font-bold animate-fade-in"><Sparkles size={14} className="inline mr-2 text-brand-yellow" />Conseil IA: {aiAdvice}</div>}
+                {aiAdvice && <div className="mt-3 bg-brand-yellow/10 border border-brand-yellow/20 p-4 rounded-xl text-xs text-black font-black animate-fade-in"><Sparkles size={14} className="inline mr-2 text-brand-yellow" />Conseil IA: {aiAdvice}</div>}
               </div>
 
               <div className="space-y-2">
@@ -399,7 +399,7 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                 {!capturedImage ? (
                   <button type="button" onClick={startCamera} className="flex flex-col items-center gap-3 text-xs font-black text-gray-400 border-2 border-dashed border-gray-200 hover:border-brand-yellow hover:bg-brand-yellow/5 rounded-2xl p-10 w-full transition-all group">
                     <div className="bg-gray-50 group-hover:bg-brand-yellow/10 p-5 rounded-full transition-all shadow-sm"><Camera size={36} /></div>
-                    <span>Prendre une photo</span>
+                    <span className="font-black uppercase tracking-widest">Prendre une photo</span>
                   </button>
                 ) : (
                   <div className="relative rounded-2xl overflow-hidden border border-gray-100 shadow-xl group">

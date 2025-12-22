@@ -279,7 +279,7 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                      onChange={(e) => handleClubChange(e.target.value)}
                    >
                      <option value="" disabled>Sélectionner...</option>
-                     {allowedClubs.map(c => <option key={c.id} value={c.id} className="text-black">{c.name}</option>)}
+                     {allowedClubs.map(c => <option key={c.id} value={c.id} className="text-black font-black">{c.name}</option>)}
                    </select>
                 </div>
               </div>
@@ -288,7 +288,7 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                 <label className="block text-xs font-black text-black uppercase tracking-widest">Description / Notes</label>
                 <textarea 
                   rows={3}
-                  className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-black font-bold outline-none focus:ring-2 focus:ring-brand-yellow"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow"
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   placeholder="Détails de l'intervention..."
@@ -328,7 +328,7 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                        {formData.signatures?.technician ? (
                           <div>
                              <p className="text-black font-black text-sm">{formData.signatures.technician.name}</p>
-                             <p className="text-[10px] text-black font-bold">{new Date(formData.signatures.technician.date).toLocaleString('fr-FR')}</p>
+                             <p className="text-[10px] text-black font-black">{new Date(formData.signatures.technician.date).toLocaleString('fr-FR')}</p>
                           </div>
                        ) : (
                           <button 
@@ -347,7 +347,7 @@ const MaintenanceSchedule: React.FC<MaintenanceScheduleProps> = ({
                        {formData.signatures?.manager ? (
                           <div>
                              <p className="text-black font-black text-sm">{formData.signatures.manager.name}</p>
-                             <p className="text-[10px] text-black font-bold">{new Date(formData.signatures.manager.date).toLocaleString('fr-FR')}</p>
+                             <p className="text-[10px] text-black font-black">{new Date(formData.signatures.manager.date).toLocaleString('fr-FR')}</p>
                           </div>
                        ) : (
                           <button 

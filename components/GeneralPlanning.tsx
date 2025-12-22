@@ -109,15 +109,15 @@ const GeneralPlanning: React.FC<GeneralPlanningProps> = ({
         <div className="flex items-center gap-3 mb-4 md:mb-0">
           <CalendarIcon className="text-brand-yellow" size={24} />
           <div>
-             <h2 className="text-xl font-bold text-white capitalize">Planning Général</h2>
-             <p className="text-xs text-gray-300 capitalize font-medium">{new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(currentDate)}</p>
+             <h2 className="text-xl font-black text-white capitalize">Planning Général</h2>
+             <p className="text-xs text-gray-300 capitalize font-black">{new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(currentDate)}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <button onClick={handleOpenCreate} className="hidden md:flex bg-brand-yellow text-brand-dark font-black uppercase tracking-tight px-4 py-2 rounded-lg items-center gap-2 hover:bg-yellow-400 transition shadow-lg shadow-brand-yellow/10"><Plus size={18} /> Ajouter événement</button>
           <div className="flex bg-brand-dark rounded-lg p-1 border border-brand-light/20">
             <button onClick={handlePrevWeek} className="p-2 hover:bg-gray-700 rounded-lg text-gray-300"><ChevronLeft size={20} /></button>
-            <button onClick={handleToday} className="px-4 py-2 text-sm font-bold text-white hover:bg-gray-700 rounded-lg transition-all">Aujourd'hui</button>
+            <button onClick={handleToday} className="px-4 py-2 text-sm font-black text-white hover:bg-gray-700 rounded-lg transition-all">Aujourd'hui</button>
             <button onClick={handleNextWeek} className="p-2 hover:bg-gray-700 rounded-lg text-gray-300"><ChevronRight size={20} /></button>
           </div>
         </div>
@@ -140,7 +140,7 @@ const GeneralPlanning: React.FC<GeneralPlanningProps> = ({
                     return (
                         <div key={event.id} onClick={(e) => handleOpenEdit(event, e)} className={`${style.bg} border ${style.border} p-2.5 rounded-lg hover:shadow-md transition-all cursor-pointer group animate-fade-in-up`}>
                             <div className="flex justify-between items-start mb-1.5"><span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${style.badge}`}>{event.startTime}</span>{event.alert && <Bell size={12} className="text-orange-500 animate-pulse" />}</div>
-                            <div className={`font-bold text-[11px] ${style.text} leading-tight line-clamp-2 uppercase`}>{event.title}</div>
+                            <div className={`font-black text-[11px] ${style.text} leading-tight line-clamp-2 uppercase`}>{event.title}</div>
                         </div>
                     );
                 })}
@@ -179,9 +179,9 @@ const GeneralPlanning: React.FC<GeneralPlanningProps> = ({
                  <div className="space-y-1">
                     <label className="block text-xs font-black text-black uppercase tracking-widest">Type</label>
                     <select className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})}>
-                        <option value="RDV">Rendez-vous</option>
-                        <option value="LIVRAISON">Livraison</option>
-                        <option value="AUTRE">Autre</option>
+                        <option value="RDV" className="font-black">Rendez-vous</option>
+                        <option value="LIVRAISON" className="font-black">Livraison</option>
+                        <option value="AUTRE" className="font-black">Autre</option>
                     </select>
                  </div>
                  <div className="flex items-center pt-6 px-2">
@@ -202,7 +202,7 @@ const GeneralPlanning: React.FC<GeneralPlanningProps> = ({
 
               <div className="space-y-1">
                 <label className="block text-xs font-black text-black uppercase tracking-widest">Notes / Description</label>
-                <textarea rows={3} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-bold outline-none focus:ring-2 focus:ring-brand-yellow" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Notes importantes..." />
+                <textarea rows={3} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Notes importantes..." />
               </div>
 
               <div className="pt-6 flex gap-4 border-t border-gray-100">

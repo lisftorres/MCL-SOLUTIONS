@@ -150,7 +150,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                 <div className="p-5 bg-brand-darker border-b border-gray-700 flex justify-between items-center">
                    <div>
                      <h4 className="font-black text-lg text-white uppercase tracking-tight">{club.name}</h4>
-                     <p className="text-xs text-gray-400 flex items-center gap-1 font-bold uppercase tracking-widest"><MapPin size={10} className="text-brand-yellow"/> {club.address}</p>
+                     <p className="text-xs text-gray-400 flex items-center gap-1 font-black uppercase tracking-widest"><MapPin size={10} className="text-brand-yellow"/> {club.address}</p>
                    </div>
                    <button 
                     onClick={() => {
@@ -184,7 +184,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                     <input 
                       type="text" 
                       placeholder="Nom du nouvel espace..."
-                      className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-3 text-sm text-white font-bold focus:border-brand-yellow outline-none transition-all"
+                      className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-3 text-sm text-white font-black focus:border-brand-yellow outline-none transition-all"
                       value={activeClubIdForSpaces === club.id ? newSpaceName : ''}
                       onChange={(e) => {
                           setActiveClubIdForSpaces(club.id);
@@ -222,7 +222,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                   className={`w-full text-left p-4 border-b border-gray-700/50 hover:bg-white/5 transition flex justify-between items-center text-xs font-black uppercase tracking-tighter ${selectedTrade === trade ? 'bg-brand-yellow text-brand-dark' : 'text-gray-400'}`}
                 >
                   {trade}
-                  <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded-full font-black">
                     {failureTypes[trade]?.length || 0}
                   </span>
                 </button>
@@ -236,7 +236,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                  <Wrench className="text-brand-yellow" />
                  {selectedTrade}
                </h3>
-               <p className="text-gray-400 text-sm mb-8 font-medium">
+               <p className="text-gray-400 text-sm mb-8 font-black">
                  Personnalisez les types de pannes pour ce métier.
                </p>
 
@@ -244,7 +244,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                  <input 
                    type="text" 
                    placeholder="Nouveau type de panne..."
-                   className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-4 text-white font-bold focus:border-brand-yellow outline-none transition-all"
+                   className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-4 text-white font-black focus:border-brand-yellow outline-none transition-all"
                    value={newFailureType}
                    onChange={(e) => setNewFailureType(e.target.value)}
                    onKeyDown={(e) => {
@@ -262,7 +262,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  {(failureTypes[selectedTrade] || []).map((failure, idx) => (
                    <div key={idx} className="bg-brand-dark border border-gray-700 p-4 rounded-xl flex justify-between items-center group hover:border-brand-yellow/30 transition-all">
-                     <span className="text-gray-200 font-bold text-sm uppercase tracking-tighter">{failure}</span>
+                     <span className="text-gray-200 font-black text-sm uppercase tracking-tighter">{failure}</span>
                      <button 
                        onClick={() => handleDeleteFailureType(failure)}
                        className="text-gray-500 hover:text-red-400 transition-colors"
@@ -286,7 +286,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                   </div>
                   <div>
                      <h3 className="text-2xl font-black text-white uppercase tracking-tight">Notifications</h3>
-                     <p className="text-gray-400 text-sm mt-1 font-medium">
+                     <p className="text-gray-400 text-sm mt-1 font-black">
                         Configurez vos préférences d'alertes en temps réel.
                      </p>
                   </div>
@@ -298,7 +298,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                         <div className="bg-blue-500/20 p-3 rounded-xl"><Smartphone className="text-blue-400" size={20} /></div>
                         <div>
                            <div className="font-black text-white uppercase tracking-tighter text-sm">Notifications Navigateur</div>
-                           <div className="text-xs text-gray-500 font-bold mt-0.5">Alertes push en arrière-plan.</div>
+                           <div className="text-xs text-gray-500 font-black mt-0.5">Alertes push en arrière-plan.</div>
                         </div>
                      </div>
                      <button 
@@ -318,7 +318,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                        <label key={pref.key} className="flex items-center justify-between p-4 bg-brand-dark rounded-2xl border border-gray-700 cursor-pointer hover:border-brand-yellow/50 transition-all group shadow-sm">
                           <div>
                              <div className="font-black text-white uppercase tracking-tighter text-sm">{pref.label}</div>
-                             <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">{pref.sub}</div>
+                             <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-0.5">{pref.sub}</div>
                           </div>
                           <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
                              <input 
@@ -369,7 +369,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                 />
               </div>
               <div className="pt-6 flex gap-4 border-t border-gray-100">
-                <button type="button" onClick={() => setShowClubModal(false)} className="flex-1 bg-gray-100 text-gray-500 font-black uppercase py-4 rounded-xl">Annuler</button>
+                <button type="button" onClick={() => setShowClubModal(false)} className="flex-1 bg-gray-100 text-black font-black uppercase py-4 rounded-xl">Annuler</button>
                 <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase py-4 rounded-xl hover:bg-yellow-400 shadow-xl shadow-brand-yellow/30">Créer le club</button>
               </div>
             </form>
