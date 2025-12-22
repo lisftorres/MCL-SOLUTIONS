@@ -131,15 +131,15 @@ const UserManager: React.FC<UserManagerProps> = ({ users, clubs, userPasswords, 
                 <label className="block text-[10px] font-black text-black uppercase tracking-widest">Mot de passe</label>
                 <div className="relative">
                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                   <input type="text" required={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 text-black font-mono font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={password} onChange={e => setPassword(e.target.value)} placeholder={isEditing ? "Modifier si nécessaire..." : "123456"} />
+                   <input type="text" required={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={password} onChange={e => setPassword(e.target.value)} placeholder={isEditing ? "Modifier si nécessaire..." : "123456"} />
                 </div>
               </div>
               <div className="space-y-1">
                 <label className="block text-[10px] font-black text-black uppercase tracking-widest">Accès / Rôle</label>
                 <select className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all cursor-pointer" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as UserRole})}>
-                  <option value={UserRole.ADMIN} className="font-black text-black">Administrateur</option>
-                  <option value={UserRole.MANAGER} className="font-black text-black">Manager Club</option>
-                  <option value={UserRole.TECHNICIAN} className="font-black text-black">Technicien</option>
+                  <option value={UserRole.ADMIN} className="text-black font-black">Administrateur</option>
+                  <option value={UserRole.MANAGER} className="text-black font-black">Manager Club</option>
+                  <option value={UserRole.TECHNICIAN} className="text-black font-black">Technicien</option>
                 </select>
               </div>
               <div className="space-y-2">

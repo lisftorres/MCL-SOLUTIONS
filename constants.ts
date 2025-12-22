@@ -31,7 +31,6 @@ export const MOCK_CLUBS: Club[] = [
 const ALL_CLUB_IDS = MOCK_CLUBS.map(c => c.id);
 
 export const MOCK_USERS: User[] = [
-  // Admins
   { 
     id: 'admin_fixed', 
     name: 'FELICIO TORRES Lisandro', 
@@ -43,14 +42,13 @@ export const MOCK_USERS: User[] = [
   },
   { 
     id: 'user_marie', 
-    name: 'Marie Ciappa', 
+    name: 'MARIE CIAPPA', 
     email: 'mariea.ciappa@gmail.com', 
     role: UserRole.ADMIN, 
     clubIds: ALL_CLUB_IDS, 
-    avatar: 'https://ui-avatars.com/api/?name=Marie+Ciappa&background=random&color=373F47',
+    avatar: 'https://ui-avatars.com/api/?name=MARIE+CIAPPA&background=random&color=373F47',
     preferences: { tickets: true, checks: true, maintenance: true, browserPush: true }
   },
-  // Managers
   {
     id: 'u_jonas',
     name: 'JONAS',
@@ -83,7 +81,7 @@ export const MOCK_USERS: User[] = [
     name: 'JULIEN',
     email: 'manager.fpechirolles@gmail.com',
     role: UserRole.MANAGER,
-    clubIds: ['c_comboire'], // Comboire est à Echirolles
+    clubIds: ['c_comboire'],
     avatar: 'https://ui-avatars.com/api/?name=Julien&background=random',
     preferences: { tickets: true, checks: true, maintenance: true, browserPush: false }
   }
@@ -202,7 +200,7 @@ export const MOCK_MAINTENANCE: MaintenanceEvent[] = [
   {
     id: 'm1',
     title: 'Remplacement des filtres CTA',
-    date: new Date().toISOString().split('T')[0], // Aujourd'hui
+    date: new Date().toISOString().split('T')[0],
     description: 'Intervention prévue par prestataire externe.',
     notifyOnDashboard: true,
     clubId: 'c_comboire'
@@ -310,7 +308,7 @@ export const MOCK_PLANNING_EVENTS: PlanningEvent[] = [
   {
     id: 'pe2',
     title: 'RDV Société Nettoyage',
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Demain
+    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     startTime: '14:00',
     type: 'RDV',
     description: 'Point mensuel sur la qualité du nettoyage.',
