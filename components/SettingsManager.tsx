@@ -15,8 +15,8 @@ interface SettingsManagerProps {
 }
 
 const SettingsManager: React.FC<SettingsManagerProps> = ({ 
-  clubs, 
-  failureTypes, 
+  clubs = [], 
+  failureTypes = {}, 
   onAddClub, 
   onDeleteClub, 
   onUpdateClubSpaces, 
@@ -61,15 +61,16 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
     if (!newSpaceName) return;
     const club = clubs.find(c => c.id === clubId);
     if (club) {
-      onUpdateClubSpaces(clubId, [...club.spaces, newSpaceName]);
+      onUpdateClubSpaces(clubId, [...(club.spaces || []), newSpaceName]);
       setNewSpaceName('');
+      setActiveClubIdForSpaces(null);
     }
   };
 
   const handleDeleteSpace = (clubId: string, spaceIndex: number) => {
     const club = clubs.find(c => c.id === clubId);
     if (club) {
-      const newSpaces = [...club.spaces];
+      const newSpaces = [...(club.spaces || [])];
       newSpaces.splice(spaceIndex, 1);
       onUpdateClubSpaces(clubId, newSpaces);
     }
@@ -95,17 +96,6 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
         ...userPreferences,
         [key]: !userPreferences[key]
       });
-    }
-  };
-
-  const handleRequestBrowserPermission = async () => {
-    if (!('Notification' in window)) {
-      alert("Ce navigateur ne supporte pas les notifications.");
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted' && userPreferences && onUpdatePreferences) {
-      onUpdatePreferences({ ...userPreferences, browserPush: true });
     }
   };
 
@@ -153,9 +143,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                      <p className="text-xs text-gray-400 flex items-center gap-1 font-black uppercase tracking-widest"><MapPin size={10} className="text-brand-yellow"/> {club.address}</p>
                    </div>
                    <button 
-                    onClick={() => {
-                        if(window.confirm('Supprimer ce club ?')) onDeleteClub(club.id);
-                    }}
+                    onClick={() => { if(window.confirm('Supprimer ce club ?')) onDeleteClub(club.id); }}
                     className="text-red-400 hover:bg-red-500/20 p-2.5 rounded-full transition"
                    >
                      <Trash2 size={18} />
@@ -166,14 +154,11 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                   <h5 className="text-[10px] font-black text-gray-500 mb-4 flex items-center gap-2 uppercase tracking-widest">
                     <Layers size={14} className="text-brand-yellow" /> Espaces configurés
                   </h5>
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {club.spaces.map((space, idx) => (
+                  <div className="flex flex-wrap gap-2 mb-6 min-h-[40px]">
+                    {(club.spaces || []).map((space, idx) => (
                       <span key={idx} className="bg-brand-dark px-3 py-1.5 rounded-lg text-xs font-black text-gray-300 flex items-center gap-2 group border border-gray-700 uppercase tracking-tighter">
                         {space}
-                        <button 
-                          onClick={() => handleDeleteSpace(club.id, idx)}
-                          className="text-gray-500 hover:text-red-400 transition-colors"
-                        >
+                        <button onClick={() => handleDeleteSpace(club.id, idx)} className="text-gray-500 hover:text-red-400 transition-colors">
                           <X size={12} />
                         </button>
                       </span>
@@ -184,7 +169,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                     <input 
                       type="text" 
                       placeholder="Nom du nouvel espace..."
-                      className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-3 text-sm text-white font-black focus:border-brand-yellow outline-none transition-all"
+                      className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-3 text-sm text-white font-black focus:border-brand-yellow outline-none transition-all placeholder:text-gray-500"
                       value={activeClubIdForSpaces === club.id ? newSpaceName : ''}
                       onChange={(e) => {
                           setActiveClubIdForSpaces(club.id);
@@ -236,7 +221,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                  <Wrench className="text-brand-yellow" />
                  {selectedTrade}
                </h3>
-               <p className="text-gray-400 text-sm mb-8 font-black">
+               <p className="text-gray-400 text-sm mb-8 font-black uppercase tracking-widest">
                  Personnalisez les types de pannes pour ce métier.
                </p>
 
@@ -244,17 +229,12 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                  <input 
                    type="text" 
                    placeholder="Nouveau type de panne..."
-                   className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-4 text-white font-black focus:border-brand-yellow outline-none transition-all"
+                   className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-4 text-white font-black focus:border-brand-yellow outline-none transition-all placeholder:text-gray-500"
                    value={newFailureType}
                    onChange={(e) => setNewFailureType(e.target.value)}
-                   onKeyDown={(e) => {
-                       if(e.key === 'Enter') handleAddFailureType();
-                   }}
+                   onKeyDown={(e) => { if(e.key === 'Enter') handleAddFailureType(); }}
                  />
-                 <button 
-                   onClick={handleAddFailureType}
-                   className="bg-brand-yellow text-brand-dark font-black uppercase tracking-tight px-8 py-2 rounded-xl hover:bg-yellow-400 transition shadow-xl"
-                 >
+                 <button onClick={handleAddFailureType} className="bg-brand-yellow text-brand-dark font-black uppercase tracking-tight px-8 py-2 rounded-xl hover:bg-yellow-400 transition shadow-xl">
                    Ajouter
                  </button>
                </div>
@@ -263,10 +243,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                  {(failureTypes[selectedTrade] || []).map((failure, idx) => (
                    <div key={idx} className="bg-brand-dark border border-gray-700 p-4 rounded-xl flex justify-between items-center group hover:border-brand-yellow/30 transition-all">
                      <span className="text-gray-200 font-black text-sm uppercase tracking-tighter">{failure}</span>
-                     <button 
-                       onClick={() => handleDeleteFailureType(failure)}
-                       className="text-gray-500 hover:text-red-400 transition-colors"
-                     >
+                     <button onClick={() => handleDeleteFailureType(failure)} className="text-gray-500 hover:text-red-400 transition-colors">
                        <Trash2 size={16} />
                      </button>
                    </div>
@@ -275,67 +252,6 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
              </div>
           </div>
         </div>
-      )}
-
-      {activeTab === 'notifications' && userPreferences && (
-         <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-            <div className="bg-brand-light p-8 rounded-2xl border border-gray-700 shadow-2xl">
-               <div className="flex items-start gap-5 mb-8">
-                  <div className="bg-brand-dark p-4 rounded-2xl border border-gray-700">
-                     <BellRing className="text-brand-yellow" size={28} />
-                  </div>
-                  <div>
-                     <h3 className="text-2xl font-black text-white uppercase tracking-tight">Notifications</h3>
-                     <p className="text-gray-400 text-sm mt-1 font-black">
-                        Configurez vos préférences d'alertes en temps réel.
-                     </p>
-                  </div>
-               </div>
-
-               <div className="space-y-4">
-                  <div className="bg-brand-darker p-5 rounded-2xl flex justify-between items-center border border-gray-700 mb-8 shadow-inner">
-                     <div className="flex items-center gap-4">
-                        <div className="bg-blue-500/20 p-3 rounded-xl"><Smartphone className="text-blue-400" size={20} /></div>
-                        <div>
-                           <div className="font-black text-white uppercase tracking-tighter text-sm">Notifications Navigateur</div>
-                           <div className="text-xs text-gray-500 font-black mt-0.5">Alertes push en arrière-plan.</div>
-                        </div>
-                     </div>
-                     <button 
-                        onClick={handleRequestBrowserPermission}
-                        className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${userPreferences.browserPush && Notification.permission === 'granted' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-brand-yellow text-brand-dark hover:bg-yellow-400 shadow-lg'}`}
-                     >
-                        {userPreferences.browserPush && Notification.permission === 'granted' ? 'Actif' : 'Activer'}
-                     </button>
-                  </div>
-
-                  <div className="space-y-3">
-                     {[
-                       { key: 'tickets', label: 'Tickets Urgents', sub: "Alertes 'Haute' ou 'Critique'." },
-                       { key: 'checks', label: 'Vérifications', sub: "Alertes sur les échéances dépassées." },
-                       { key: 'maintenance', label: 'Maintenances', sub: "Alertes sur les nouveaux plannings." }
-                     ].map((pref) => (
-                       <label key={pref.key} className="flex items-center justify-between p-4 bg-brand-dark rounded-2xl border border-gray-700 cursor-pointer hover:border-brand-yellow/50 transition-all group shadow-sm">
-                          <div>
-                             <div className="font-black text-white uppercase tracking-tighter text-sm">{pref.label}</div>
-                             <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-0.5">{pref.sub}</div>
-                          </div>
-                          <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
-                             <input 
-                                type="checkbox" 
-                                className="opacity-0 w-0 h-0"
-                                checked={userPreferences[pref.key as keyof NotificationPreferences]}
-                                onChange={() => handleTogglePreference(pref.key as keyof NotificationPreferences)}
-                             />
-                             <span className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-colors duration-200 ${userPreferences[pref.key as keyof NotificationPreferences] ? 'bg-brand-yellow' : 'bg-gray-600'}`}></span>
-                             <span className={`absolute left-1 bottom-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 transform ${userPreferences[pref.key as keyof NotificationPreferences] ? 'translate-x-6' : 'translate-x-0'}`}></span>
-                          </div>
-                       </label>
-                     ))}
-                  </div>
-               </div>
-            </div>
-         </div>
       )}
 
       {showClubModal && (
@@ -347,22 +263,22 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
             </div>
             <form onSubmit={handleCreateClub} className="p-8 space-y-6">
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-black uppercase tracking-widest">Nom du club</label>
+                <label className="block text-[11px] font-black text-black uppercase tracking-widest">Nom du club</label>
                 <input 
                   type="text" 
                   required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all placeholder:text-gray-400"
                   value={newClubName}
                   onChange={e => setNewClubName(e.target.value)}
                   placeholder="Ex: Fitness Park Neyrpic"
                 />
               </div>
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-black uppercase tracking-widest">Adresse complète</label>
+                <label className="block text-[11px] font-black text-black uppercase tracking-widest">Adresse complète</label>
                 <input 
                   type="text" 
                   required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all placeholder:text-gray-400"
                   value={newClubAddress}
                   onChange={e => setNewClubAddress(e.target.value)}
                   placeholder="Rue, Code Postal, Ville"

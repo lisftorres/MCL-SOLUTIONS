@@ -68,15 +68,15 @@ const App: React.FC = () => {
       ]);
 
       setDbStatus('CONNECTED');
-      if (results[0].data && results[0].data.length > 0) setClubs(results[0].data);
-      if (results[1].data && results[1].data.length > 0) setTickets(results[1].data);
-      if (results[2].data && results[2].data.length > 0) setChecks(results[2].data);
-      if (results[3].data && results[3].data.length > 0) setMaintenanceEvents(results[3].data);
-      if (results[4].data && results[4].data.length > 0) setPlanningEvents(results[4].data);
-      if (results[5].data && results[5].data.length > 0) setDocs(results[5].data);
-      if (results[6].data && results[6].data.length > 0) setSpecifications(results[6].data);
-      if (results[7].data && results[7].data.length > 0) setArtisans(results[7].data);
-      if (results[8].data && results[8].data.length > 0) setUsers(results[8].data);
+      if (results[0].data) setClubs(results[0].data);
+      if (results[1].data) setTickets(results[1].data);
+      if (results[2].data) setChecks(results[2].data);
+      if (results[3].data) setMaintenanceEvents(results[3].data);
+      if (results[4].data) setPlanningEvents(results[4].data);
+      if (results[5].data) setDocs(results[5].data);
+      if (results[6].data) setSpecifications(results[6].data);
+      if (results[7].data) setArtisans(results[7].data);
+      if (results[8].data) setUsers(results[8].data);
     } catch (e: any) {
       console.error("Erreur sync:", e);
       setDbStatus('ERROR');
@@ -88,11 +88,6 @@ const App: React.FC = () => {
       setDbStatus('DEMO');
     } else {
       fetchData();
-      const tables = ['tickets', 'checks', 'maintenance', 'planning', 'artisans', 'users', 'clubs', 'documents', 'specifications'];
-      const channels = tables.map(table => 
-        supabase.channel(`public:${table}`).on('postgres_changes', { event: '*', schema: 'public', table }, () => fetchData()).subscribe()
-      );
-      return () => { channels.forEach(c => supabase.removeChannel(c)); };
     }
   }, []);
 
@@ -198,6 +193,17 @@ const App: React.FC = () => {
     syncOperation('clubs', 'delete', null, id);
   };
 
+  // NOUVELLE FONCTION : Mise à jour des espaces d'un club
+  const handleClubSpacesUpdate = (clubId: string, spaces: string[]) => {
+    setClubs(prev => prev.map(c => c.id === clubId ? { ...c, spaces } : c));
+    syncOperation('clubs', 'update', { spaces }, clubId);
+  };
+
+  // NOUVELLE FONCTION : Mise à jour des types de pannes
+  const handleFailureTypesUpdate = (trade: TradeType, failures: string[]) => {
+    setFailureTypes(prev => ({ ...prev, [trade]: failures }));
+  };
+
   const handleUserAdd = (u: Partial<User>, p?: string) => {
     const userId = `u_${Date.now()}`;
     const newUser = { 
@@ -207,12 +213,7 @@ const App: React.FC = () => {
       clubIds: u.clubIds || []
     } as User;
     
-    if (p) {
-      setUserPasswords(prev => ({ ...prev, [userId]: p }));
-    } else {
-      setUserPasswords(prev => ({ ...prev, [userId]: "123456" }));
-    }
-    
+    if (p) setUserPasswords(prev => ({ ...prev, [userId]: p }));
     setUsers(prev => [...prev, newUser]);
     syncOperation('users', 'insert', newUser);
   };
@@ -258,7 +259,7 @@ const App: React.FC = () => {
       case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={() => {}} onEditArtisan={() => {}} onDeleteArtisan={() => {}} />;
       case 'financial': return <FinancialManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={() => {}} onDeleteDocument={() => {}} />;
       case 'documents': return <DocumentManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={() => {}} onDeleteDocument={() => {}} />;
-      case 'settings': return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={handleClubAdd} onDeleteClub={handleClubDelete} onUpdateClubSpaces={() => {}} onUpdateFailureTypes={() => {}} />;
+      case 'settings': return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={handleClubAdd} onDeleteClub={handleClubDelete} onUpdateClubSpaces={handleClubSpacesUpdate} onUpdateFailureTypes={handleFailureTypesUpdate} userPreferences={currentUser.preferences} />;
       default: return <Dashboard {...commonProps} maintenanceEvents={maintenanceEvents} />;
     }
   };
@@ -268,9 +269,7 @@ const App: React.FC = () => {
   return (
     <Layout user={currentUser} onLogout={handleLogout} activeTab={activeTab} onTabChange={setActiveTab}>
       <div className={`mb-6 p-4 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg backdrop-blur-md animate-fade-in ${
-        dbStatus === 'CONNECTED' ? 'bg-green-500/10 border-green-500/30' : 
-        dbStatus === 'DEMO' ? 'bg-brand-yellow/10 border-brand-yellow/30' : 
-        'bg-red-500/10 border-red-500/30'
+        dbStatus === 'CONNECTED' ? 'bg-green-500/10 border-green-500/30' : 'bg-brand-yellow/10 border-brand-yellow/30'
       }`}>
         <div className="flex items-center gap-4">
           <div className={`p-3 rounded-full ${dbStatus === 'CONNECTED' ? 'bg-green-500/20 text-green-400' : 'bg-brand-yellow/20 text-brand-yellow'}`}>
