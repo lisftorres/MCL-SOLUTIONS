@@ -39,6 +39,19 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
   const [selectedTrade, setSelectedTrade] = useState<TradeType>(TradeType.ELECTRICITY);
   const [newFailureType, setNewFailureType] = useState('');
 
+  // Liste des espaces standards demandés
+  const DEFAULT_GYM_SPACES = [
+    'ACCUEIL', 
+    'CROSS', 
+    'FORCE', 
+    'GUIDEE', 
+    'VESTIAIRE HOMME', 
+    'VESTIAIRE FEMME', 
+    'SISMO', 
+    'YANGA', 
+    'HYDROMASSAGE'
+  ];
+
   // Handlers for Clubs
   const handleCreateClub = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +61,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
       id: `c${Date.now()}`,
       name: newClubName,
       address: newClubAddress,
-      spaces: ['Accueil'] 
+      spaces: [...DEFAULT_GYM_SPACES] // Initialisation avec les 9 espaces standards
     };
     
     onAddClub(newClub);
@@ -61,7 +74,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
     if (!newSpaceName) return;
     const club = clubs.find(c => c.id === clubId);
     if (club) {
-      onUpdateClubSpaces(clubId, [...(club.spaces || []), newSpaceName]);
+      onUpdateClubSpaces(clubId, [...(club.spaces || []), newSpaceName.toUpperCase()]);
       setNewSpaceName('');
       setActiveClubIdForSpaces(null);
     }
@@ -169,7 +182,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                     <input 
                       type="text" 
                       placeholder="Nom du nouvel espace..."
-                      className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-3 text-sm text-white font-black focus:border-brand-yellow outline-none transition-all placeholder:text-gray-500"
+                      className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-3 text-sm text-white font-black uppercase focus:border-brand-yellow outline-none transition-all placeholder:text-gray-500"
                       value={activeClubIdForSpaces === club.id ? newSpaceName : ''}
                       onChange={(e) => {
                           setActiveClubIdForSpaces(club.id);
@@ -229,7 +242,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                  <input 
                    type="text" 
                    placeholder="Nouveau type de panne..."
-                   className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-4 text-white font-black focus:border-brand-yellow outline-none transition-all placeholder:text-gray-500"
+                   className="flex-1 bg-brand-dark border border-gray-600 rounded-xl px-4 py-4 text-white font-black uppercase focus:border-brand-yellow outline-none transition-all placeholder:text-gray-500"
                    value={newFailureType}
                    onChange={(e) => setNewFailureType(e.target.value)}
                    onKeyDown={(e) => { if(e.key === 'Enter') handleAddFailureType(); }}
@@ -267,7 +280,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                 <input 
                   type="text" 
                   required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all placeholder:text-gray-400"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black uppercase outline-none focus:ring-2 focus:ring-brand-yellow transition-all placeholder:text-gray-400"
                   value={newClubName}
                   onChange={e => setNewClubName(e.target.value)}
                   placeholder="Ex: Fitness Park Neyrpic"
@@ -278,7 +291,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({
                 <input 
                   type="text" 
                   required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all placeholder:text-gray-400"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black uppercase outline-none focus:ring-2 focus:ring-brand-yellow transition-all placeholder:text-gray-400"
                   value={newClubAddress}
                   onChange={e => setNewClubAddress(e.target.value)}
                   placeholder="Rue, Code Postal, Ville"

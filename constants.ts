@@ -1,30 +1,42 @@
 
 import { Club, Ticket, PeriodicCheck, User, UserRole, TradeType, TicketStatus, Urgency, CheckStatus, DocumentFile, MaintenanceEvent, Artisan, Specification, PlanningEvent } from './types';
 
+const DEFAULT_GYM_SPACES = [
+  'ACCUEIL', 
+  'CROSS', 
+  'FORCE', 
+  'GUIDEE', 
+  'VESTIAIRE HOMME', 
+  'VESTIAIRE FEMME', 
+  'SISMO', 
+  'YANGA', 
+  'HYDROMASSAGE'
+];
+
 export const MOCK_CLUBS: Club[] = [
   { 
     id: 'c_comboire', 
     name: 'FP COMBOIRE', 
     address: 'Espace Comboire, 38130 Échirolles', 
-    spaces: ['Accueil', 'Cardio', 'Musculation Guidée', 'Poids Libres', 'Crossfit', 'Studio Bike', 'Vestiaires H', 'Vestiaires F', 'Sauna', 'Local Technique'] 
+    spaces: [...DEFAULT_GYM_SPACES, 'Local Technique', 'Sauna'] 
   },
   { 
     id: 'c_grenoble', 
     name: 'FP GRENOBLE CENTRE', 
     address: 'Grenoble Centre', 
-    spaces: ['Accueil', 'Cardio', 'Musculation', 'Zone Functional', 'Vestiaires H', 'Vestiaires F', 'Bureaux', 'Local Technique'] 
+    spaces: [...DEFAULT_GYM_SPACES, 'Bureaux', 'Local Technique'] 
   },
   { 
     id: 'c_meylan', 
     name: 'FP MEYLAN', 
     address: 'Meylan', 
-    spaces: ['Accueil', 'Cardio', 'Musculation', 'Cross Training', 'Vestiaires H', 'Vestiaires F', 'Salle de Cours', 'Local Technique'] 
+    spaces: [...DEFAULT_GYM_SPACES, 'Salle de Cours', 'Local Technique'] 
   },
   { 
     id: 'c_neyrpic', 
     name: 'FP NEYRPIC', 
     address: 'Centre Commercial Neyrpic', 
-    spaces: ['Accueil', 'Cardio', 'Musculation', 'Fight Park', 'Cycle Park', 'Vestiaires H', 'Vestiaires F', 'Local Technique'] 
+    spaces: [...DEFAULT_GYM_SPACES, 'Fight Park', 'Cycle Park', 'Local Technique'] 
   },
 ];
 
@@ -106,7 +118,7 @@ export const MOCK_TICKETS: Ticket[] = [
   {
     id: 't1',
     clubId: 'c_comboire',
-    space: 'Vestiaires H',
+    space: 'VESTIAIRE HOMME',
     trade: TradeType.PLUMBING,
     description: 'Fuite sous le lavabo n°3, flaque d\'eau importante.',
     status: TicketStatus.OPEN,
@@ -121,7 +133,7 @@ export const MOCK_TICKETS: Ticket[] = [
   {
     id: 't2',
     clubId: 'c_meylan',
-    space: 'Cardio',
+    space: 'FORCE',
     trade: TradeType.HVAC,
     description: 'La climatisation fait un bruit de claquement.',
     status: TicketStatus.IN_PROGRESS,
@@ -138,7 +150,7 @@ export const MOCK_TICKETS: Ticket[] = [
   {
     id: 't3',
     clubId: 'c_neyrpic',
-    space: 'Accueil',
+    space: 'ACCUEIL',
     trade: TradeType.LIGHTING,
     description: 'Ampoule grillée au dessus du comptoir.',
     status: TicketStatus.RESOLVED,
@@ -179,7 +191,7 @@ export const MOCK_CHECKS: PeriodicCheck[] = [
   {
     id: 'ch2',
     clubId: 'c_grenoble',
-    space: 'Vestiaires F',
+    space: 'VESTIAIRE FEMME',
     trade: TradeType.PLUMBING,
     title: 'Contrôle légionelle douches',
     frequencyMonths: 1,
