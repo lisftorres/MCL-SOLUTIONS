@@ -102,6 +102,7 @@ const App: React.FC = () => {
     }
   };
 
+  // --- TICKETS ---
   const handleTicketCreate = (t: Partial<Ticket>) => {
     const newTicket = { 
       ...t, 
@@ -130,6 +131,7 @@ const App: React.FC = () => {
     syncOperation('tickets', 'update', { status }, id);
   };
 
+  // --- CHECKS ---
   const handleCheckCreate = (c: Partial<PeriodicCheck>) => {
     const newCheck = { ...c, id: `ch_${Date.now()}`, history: [], deleted: false } as PeriodicCheck;
     setChecks(prev => [newCheck, ...prev]);
@@ -151,6 +153,7 @@ const App: React.FC = () => {
     syncOperation('checks', 'update', { deleted: true }, id);
   };
 
+  // --- MAINTENANCE ---
   const handleMaintenanceAdd = (m: Partial<MaintenanceEvent>) => {
     const newEvent = { ...m, id: `m_${Date.now()}`, deleted: false } as MaintenanceEvent;
     setMaintenanceEvents(prev => [newEvent, ...prev]);
@@ -167,6 +170,7 @@ const App: React.FC = () => {
     syncOperation('maintenance', 'update', { deleted: true }, id);
   };
 
+  // --- PLANNING ---
   const handlePlanningAdd = (e: Partial<PlanningEvent>) => {
     const newEvent = { ...e, id: `pe_${Date.now()}`, deleted: false } as PlanningEvent;
     setPlanningEvents(prev => [...prev, newEvent]);
@@ -183,6 +187,7 @@ const App: React.FC = () => {
     syncOperation('planning', 'update', { deleted: true }, id);
   };
 
+  // --- CLUBS ---
   const handleClubAdd = (c: Club) => {
     setClubs(prev => [...prev, c]);
     syncOperation('clubs', 'insert', c);
@@ -193,17 +198,62 @@ const App: React.FC = () => {
     syncOperation('clubs', 'delete', null, id);
   };
 
-  // NOUVELLE FONCTION : Mise à jour des espaces d'un club
   const handleClubSpacesUpdate = (clubId: string, spaces: string[]) => {
     setClubs(prev => prev.map(c => c.id === clubId ? { ...c, spaces } : c));
     syncOperation('clubs', 'update', { spaces }, clubId);
   };
 
-  // NOUVELLE FONCTION : Mise à jour des types de pannes
   const handleFailureTypesUpdate = (trade: TradeType, failures: string[]) => {
     setFailureTypes(prev => ({ ...prev, [trade]: failures }));
   };
 
+  // --- ARTISANS ---
+  const handleArtisanAdd = (a: Partial<Artisan>) => {
+    const newArtisan = { ...a, id: `a_${Date.now()}` } as Artisan;
+    setArtisans(prev => [...prev, newArtisan]);
+    syncOperation('artisans', 'insert', newArtisan);
+  };
+
+  const handleArtisanEdit = (a: Artisan) => {
+    setArtisans(prev => prev.map(item => item.id === a.id ? a : item));
+    syncOperation('artisans', 'update', a);
+  };
+
+  const handleArtisanDelete = (id: string) => {
+    setArtisans(prev => prev.filter(a => a.id !== id));
+    syncOperation('artisans', 'delete', null, id);
+  };
+
+  // --- DOCUMENTS ---
+  const handleDocumentAdd = (d: Partial<DocumentFile>) => {
+    const newDoc = { ...d, id: `d_${Date.now()}` } as DocumentFile;
+    setDocs(prev => [...prev, newDoc]);
+    syncOperation('documents', 'insert', newDoc);
+  };
+
+  const handleDocumentDelete = (id: string) => {
+    setDocs(prev => prev.filter(d => d.id !== id));
+    syncOperation('documents', 'delete', null, id);
+  };
+
+  // --- CAHIER DES CHARGES (SPECS) ---
+  const handleSpecAdd = (s: Partial<Specification>) => {
+    const newSpec = { ...s, id: `s_${Date.now()}` } as Specification;
+    setSpecifications(prev => [...prev, newSpec]);
+    syncOperation('specifications', 'insert', newSpec);
+  };
+
+  const handleSpecEdit = (s: Specification) => {
+    setSpecifications(prev => prev.map(item => item.id === s.id ? s : item));
+    syncOperation('specifications', 'update', s);
+  };
+
+  const handleSpecDelete = (id: string) => {
+    setSpecifications(prev => prev.filter(s => s.id !== id));
+    syncOperation('specifications', 'delete', null, id);
+  };
+
+  // --- USERS ---
   const handleUserAdd = (u: Partial<User>, p?: string) => {
     const userId = `u_${Date.now()}`;
     const newUser = { 
@@ -229,6 +279,7 @@ const App: React.FC = () => {
     syncOperation('users', 'delete', null, id);
   };
 
+  // --- AUTH ---
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
     const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (foundUser) {
@@ -255,10 +306,10 @@ const App: React.FC = () => {
       case 'checks': return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={handleCheckUpdate} onCreateCheck={handleCheckCreate} onEditCheck={handleCheckEdit} onDeleteCheck={handleCheckDelete} />;
       case 'maintenance': return <MaintenanceSchedule {...commonProps} maintenanceEvents={maintenanceEvents} onAddEvent={handleMaintenanceAdd} onEditEvent={handleMaintenanceEdit} onDeleteEvent={handleMaintenanceDelete} />;
       case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={handleUserAdd} onEditUser={handleUserEdit} onDeleteUser={handleUserDelete} />;
-      case 'specs': return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={() => {}} onEditSpecification={() => {}} onDeleteSpecification={() => {}} />;
-      case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={() => {}} onEditArtisan={() => {}} onDeleteArtisan={() => {}} />;
-      case 'financial': return <FinancialManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={() => {}} onDeleteDocument={() => {}} />;
-      case 'documents': return <DocumentManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={() => {}} onDeleteDocument={() => {}} />;
+      case 'specs': return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={handleSpecAdd} onEditSpecification={handleSpecEdit} onDeleteSpecification={handleSpecDelete} />;
+      case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={handleArtisanAdd} onEditArtisan={handleArtisanEdit} onDeleteArtisan={handleArtisanDelete} />;
+      case 'financial': return <FinancialManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={handleDocumentAdd} onDeleteDocument={handleDocumentDelete} />;
+      case 'documents': return <DocumentManager documents={docs} clubs={clubs} currentUser={currentUser} onAddDocument={handleDocumentAdd} onDeleteDocument={handleDocumentDelete} />;
       case 'settings': return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={handleClubAdd} onDeleteClub={handleClubDelete} onUpdateClubSpaces={handleClubSpacesUpdate} onUpdateFailureTypes={handleFailureTypesUpdate} userPreferences={currentUser.preferences} />;
       default: return <Dashboard {...commonProps} maintenanceEvents={maintenanceEvents} />;
     }
