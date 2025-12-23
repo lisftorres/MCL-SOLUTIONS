@@ -16,22 +16,18 @@ import GeneralPlanning from './components/GeneralPlanning';
 import RecycleBin from './components/RecycleBin';
 import { MOCK_CLUBS, MOCK_TICKETS, MOCK_CHECKS, MOCK_DOCS, MOCK_USERS, MOCK_MAINTENANCE, MOCK_FAILURE_TYPES, MOCK_ARTISANS, MOCK_SPECS, MOCK_PLANNING_EVENTS } from './constants';
 import { Ticket, TicketStatus, PeriodicCheck, CheckStatus, UserRole, MaintenanceEvent, Club, TradeType, User, Artisan, DocumentFile, Specification, PlanningEvent } from './types';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, CloudOff } from 'lucide-react';
 import { supabase } from './services/supabase';
 
 const App: React.FC = () => {
-  // PERSISTENCE: Session, User and Active Tab
+  // Session persistence (Auth remains local for UX)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('mcl_isAuthenticated') === 'true';
   });
   
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('mcl_currentUser');
-    try {
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch {
-      return null;
-    }
+    try { return savedUser ? JSON.parse(savedUser) : null; } catch { return null; }
   });
 
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -40,98 +36,83 @@ const App: React.FC = () => {
 
   const [dbStatus, setDbStatus] = useState<'CONNECTED' | 'DEMO' | 'ERROR'>('DEMO');
   
-  // Data States
+  // Data States - Initialized with Empty arrays, filled by Supabase
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [userPasswords, setUserPasswords] = useState<Record<string, string>>(() => {
-    const saved = localStorage.getItem('mcl_passwords');
-    return saved ? JSON.parse(saved) : { 'admin_fixed': '10121986' };
-  });
-
-  const [tickets, setTickets] = useState<Ticket[]>(MOCK_TICKETS);
-  const [checks, setChecks] = useState<PeriodicCheck[]>(MOCK_CHECKS);
-  const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>(MOCK_MAINTENANCE);
-  const [planningEvents, setPlanningEvents] = useState<PlanningEvent[]>(MOCK_PLANNING_EVENTS);
-  const [financialDocs, setFinancialDocs] = useState<DocumentFile[]>(MOCK_DOCS.filter(d => d.type === 'QUOTE' || d.type === 'INVOICE'));
-  const [technicalDocs, setTechnicalDocs] = useState<DocumentFile[]>(MOCK_DOCS.filter(d => d.type !== 'QUOTE' && d.type !== 'INVOICE'));
-  
-  const [trashTickets, setTrashTickets] = useState<Ticket[]>([]);
-  const [trashChecks, setTrashChecks] = useState<PeriodicCheck[]>([]);
-  const [trashMaintenance, setTrashMaintenance] = useState<MaintenanceEvent[]>([]);
-  const [trashPlanning, setTrashPlanning] = useState<PlanningEvent[]>([]);
-
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [checks, setChecks] = useState<PeriodicCheck[]>([]);
+  const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>([]);
+  const [planningEvents, setPlanningEvents] = useState<PlanningEvent[]>([]);
+  const [financialDocs, setFinancialDocs] = useState<DocumentFile[]>([]);
+  const [technicalDocs, setTechnicalDocs] = useState<DocumentFile[]>([]);
   const [artisans, setArtisans] = useState<Artisan[]>(MOCK_ARTISANS);
   const [specifications, setSpecifications] = useState<Specification[]>(MOCK_SPECS);
   const [clubs, setClubs] = useState<Club[]>(MOCK_CLUBS);
   const [failureTypes, setFailureTypes] = useState<Record<TradeType, string[]>>(MOCK_FAILURE_TYPES);
+  const [userPasswords, setUserPasswords] = useState<Record<string, string>>({ 'admin_fixed': '10121986' });
 
-  // Sync state to localStorage
+  // Sync Auth only
   useEffect(() => {
     localStorage.setItem('mcl_isAuthenticated', isAuthenticated.toString());
     localStorage.setItem('mcl_activeTab', activeTab);
-    if (currentUser) {
-      localStorage.setItem('mcl_currentUser', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('mcl_currentUser');
-    }
+    if (currentUser) localStorage.setItem('mcl_currentUser', JSON.stringify(currentUser));
   }, [isAuthenticated, currentUser, activeTab]);
 
-  useEffect(() => {
-    localStorage.setItem('mcl_passwords', JSON.stringify(userPasswords));
-  }, [userPasswords]);
-
   const fetchData = async () => {
-    if (!supabase) return;
+    if (!supabase) {
+      setDbStatus('DEMO');
+      setTickets(MOCK_TICKETS);
+      setChecks(MOCK_CHECKS);
+      return;
+    }
     try {
-      const results = await Promise.all([
-        supabase.from('clubs').select('*'),
-        supabase.from('tickets').select('*'),
-        supabase.from('checks').select('*'),
-        supabase.from('maintenance').select('*'),
-        supabase.from('planning').select('*'),
-        supabase.from('financial_documents').select('*'),
-        supabase.from('technical_documents').select('*'),
-        supabase.from('artisans').select('*'),
-        supabase.from('trash_tickets').select('*'),
-        supabase.from('trash_checks').select('*'),
-        supabase.from('trash_maintenance').select('*'),
-        supabase.from('trash_planning').select('*'),
-        supabase.from('users').select('*')
-      ]);
+      const { data: clubsData } = await supabase.from('clubs').select('*');
+      const { data: ticketsData } = await supabase.from('tickets').select('*').order('createdAt', { ascending: false });
+      const { data: checksData } = await supabase.from('checks').select('*');
+      const { data: maintData } = await supabase.from('maintenance').select('*');
+      const { data: planningData } = await supabase.from('planning').select('*');
+      const { data: finData } = await supabase.from('financial_documents').select('*');
+      const { data: techData } = await supabase.from('technical_documents').select('*');
+      const { data: artData } = await supabase.from('artisans').select('*');
+      const { data: usersData } = await supabase.from('users').select('*');
 
       setDbStatus('CONNECTED');
-      if (results[0].data) setClubs(results[0].data);
-      if (results[1].data) setTickets(results[1].data);
-      if (results[2].data) setChecks(results[2].data);
-      if (results[3].data) setMaintenanceEvents(results[3].data);
-      if (results[4].data) setPlanningEvents(results[4].data);
-      if (results[5].data) setFinancialDocs(results[5].data);
-      if (results[6].data) setTechnicalDocs(results[6].data);
-      if (results[7].data) setArtisans(results[7].data);
-      if (results[12].data) setUsers(results[12].data);
-      
-      if (results[8].data) setTrashTickets(results[8].data.map(d => d.content));
-      if (results[9].data) setTrashChecks(results[9].data.map(d => d.content));
-      if (results[10].data) setTrashMaintenance(results[10].data.map(d => d.content));
-      if (results[11].data) setTrashPlanning(results[11].data.map(d => d.content));
-
+      if (clubsData) setClubs(clubsData);
+      if (ticketsData) setTickets(ticketsData);
+      if (checksData) setChecks(checksData);
+      if (maintData) setMaintenanceEvents(maintData);
+      if (planningData) setPlanningEvents(planningData);
+      if (finData) setFinancialDocs(finData);
+      if (techData) setTechnicalDocs(techData);
+      if (artData) setArtisans(artData);
+      if (usersData) setUsers(usersData);
     } catch (e: any) {
-      console.error("Erreur sync Supabase:", e);
+      console.error("Supabase Fetch Error:", e);
       setDbStatus('ERROR');
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const syncOperation = async (table: string, method: 'insert' | 'update' | 'delete', data: any, id?: string) => {
-    if (!supabase) return; 
+    if (!supabase) return true; // Mock success in demo mode
     try {
-      if (method === 'insert') await supabase.from(table).insert([data]);
-      if (method === 'update') await supabase.from(table).update(data).eq('id', id || data.id);
-      if (method === 'delete') await supabase.from(table).delete().eq('id', id);
+      if (method === 'insert') {
+        const { error } = await supabase.from(table).insert([data]);
+        if (error) throw error;
+      }
+      if (method === 'update') {
+        const { error } = await supabase.from(table).update(data).eq('id', id || data.id);
+        if (error) throw error;
+      }
+      if (method === 'delete') {
+        const { error } = await supabase.from(table).delete().eq('id', id);
+        if (error) throw error;
+      }
+      return true;
     } catch (e) {
-      console.error(`Erreur sync ${table}:`, e);
+      console.error(`Supabase Sync Error (${table}):`, e);
+      alert("Erreur de synchronisation avec la base de données.");
+      return false;
     }
   };
 
@@ -142,7 +123,6 @@ const App: React.FC = () => {
       if (storedPass === password) { 
         setCurrentUser(foundUser); 
         setIsAuthenticated(true);
-        // On ne change pas l'onglet ici pour permettre le retour sur l'onglet précédent via localStorage
         return true; 
       }
     }
@@ -156,59 +136,65 @@ const App: React.FC = () => {
     localStorage.clear();
   };
 
-  const moveToTrash = async (item: any, sourceTable: string, trashTable: string) => {
-    const trashEntry = { id: item.id, content: item };
-    await syncOperation(trashTable, 'insert', trashEntry);
-    await syncOperation(sourceTable, 'delete', null, item.id);
+  // HANDLERS WITH SUPABASE SYNC
+  const handleTicketCreate = async (t: Partial<Ticket>) => {
+    const newTicket = { ...t, id: `t_${Date.now()}`, createdAt: new Date().toISOString() } as Ticket;
+    const success = await syncOperation('tickets', 'insert', newTicket);
+    if (success) setTickets(prev => [newTicket, ...prev]);
   };
 
-  const handleTicketCreate = (t: Partial<Ticket>) => {
-    const newTicket = { ...t, id: `t_${Date.now()}`, createdAt: new Date().toISOString() } as Ticket;
-    setTickets(prev => [newTicket, ...prev]);
-    syncOperation('tickets', 'insert', newTicket);
+  const handleTicketUpdate = async (t: Ticket) => {
+    const success = await syncOperation('tickets', 'update', t);
+    if (success) setTickets(prev => prev.map(x => x.id === t.id ? t : x));
+  };
+
+  const handleTicketDelete = async (id: string) => {
+    const success = await syncOperation('tickets', 'delete', null, id);
+    if (success) setTickets(prev => prev.filter(x => x.id !== id));
+  };
+
+  const handleTicketUpdateStatus = async (id: string, status: TicketStatus) => {
+    const success = await syncOperation('tickets', 'update', { status }, id);
+    if (success) setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
   };
 
   const renderContent = () => {
     if (!currentUser) return null;
     const commonProps = { currentUser, clubs, users };
 
-    // Debug cases mapping to Layout.tsx IDs
     switch (activeTab) {
       case 'dashboard': 
         return <Dashboard {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} />;
       
-      case 'planning': 
-        return <GeneralPlanning events={planningEvents} currentUser={currentUser} onAddEvent={(e) => syncOperation('planning', 'insert', e)} onEditEvent={(e) => syncOperation('planning', 'update', e)} onDeleteEvent={(id) => syncOperation('trash_planning', 'insert', {id, content: planningEvents.find(p=>p.id===id)})} />;
-      
       case 'tickets': 
-        return <TicketManager {...commonProps} tickets={tickets} failureTypes={failureTypes} onCreateTicket={handleTicketCreate} onEditTicket={(t) => syncOperation('tickets', 'update', t)} onDeleteTicket={(id) => { const item = tickets.find(t=>t.id===id); if(item) { setTickets(prev=>prev.filter(x=>x.id!==id)); setTrashTickets(p=>[...p, item]); moveToTrash(item, 'tickets', 'trash_tickets'); }}} onUpdateStatus={(id, status) => syncOperation('tickets', 'update', { status }, id)} />;
+        return <TicketManager {...commonProps} tickets={tickets} failureTypes={failureTypes} onCreateTicket={handleTicketCreate} onEditTicket={handleTicketUpdate} onDeleteTicket={handleTicketDelete} onUpdateStatus={handleTicketUpdateStatus} />;
+      
+      case 'planning': 
+        return <GeneralPlanning events={planningEvents} currentUser={currentUser} onAddEvent={async (e) => { const n = {...e, id:`p_${Date.now()}`}; if(await syncOperation('planning','insert',n)) setPlanningEvents(p=>[...p, n as PlanningEvent]); }} onEditEvent={async (e) => { if(await syncOperation('planning','update',e)) setPlanningEvents(p=>p.map(x=>x.id===e.id?e:x)); }} onDeleteEvent={async (id) => { if(await syncOperation('planning','delete',null,id)) setPlanningEvents(p=>p.filter(x=>x.id!==id)); }} />;
       
       case 'checks': 
-        return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={(id, items, status) => syncOperation('checks', 'update', { checklistItems: items, status }, id)} onCreateCheck={(c) => syncOperation('checks', 'insert', c)} onEditCheck={(c) => syncOperation('checks', 'update', c)} onDeleteCheck={(id) => { const item = checks.find(c=>c.id===id); if(item) { setChecks(prev=>prev.filter(x=>x.id!==id)); setTrashChecks(p=>[...p, item]); moveToTrash(item, 'checks', 'trash_checks'); }}} />;
+        return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={async (id, items, status) => { if(await syncOperation('checks','update',{checklistItems:items, status},id)) setChecks(p=>p.map(x=>x.id===id?{...x, checklistItems:items, status}:x)); }} onCreateCheck={async (c) => { const n = {...c, id:`c_${Date.now()}`}; if(await syncOperation('checks','insert',n)) setChecks(p=>[...p, n as PeriodicCheck]); }} onEditCheck={async (c) => { if(await syncOperation('checks','update',c)) setChecks(p=>p.map(x=>x.id===c.id?c:x)); }} onDeleteCheck={async (id) => { if(await syncOperation('checks','delete',null,id)) setChecks(p=>p.filter(x=>x.id!==id)); }} />;
       
       case 'maintenance': 
-        return <MaintenanceSchedule {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} onAddEvent={(m) => syncOperation('maintenance', 'insert', m)} onEditEvent={(m) => syncOperation('maintenance', 'update', m)} onDeleteEvent={(id) => { const item = maintenanceEvents.find(m=>m.id===id); if(item) { setMaintenanceEvents(prev=>prev.filter(x=>x.id!==id)); setTrashMaintenance(p=>[...p, item]); moveToTrash(item, 'maintenance', 'trash_maintenance'); }}} />;
+        return <MaintenanceSchedule {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} onAddEvent={async (m) => { const n = {...m, id:`m_${Date.now()}`}; if(await syncOperation('maintenance','insert',n)) setMaintenanceEvents(p=>[...p, n as MaintenanceEvent]); }} onEditEvent={async (m) => { if(await syncOperation('maintenance','update',m)) setMaintenanceEvents(p=>p.map(x=>x.id===m.id?m:x)); }} onDeleteEvent={async (id) => { if(await syncOperation('maintenance','delete',null,id)) setMaintenanceEvents(p=>p.filter(x=>x.id!==id)); }} />;
       
       case 'specs': 
-        return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={(s) => syncOperation('specifications', 'insert', s)} onEditSpecification={(s) => syncOperation('specifications', 'update', s)} onDeleteSpecification={(id) => syncOperation('specifications', 'delete', null, id)} />;
+        return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={async (s) => { const n = {...s, id:`s_${Date.now()}`}; if(await syncOperation('specifications','insert',n)) setSpecifications(p=>[...p, n as Specification]); }} onEditSpecification={async (s) => { if(await syncOperation('specifications','update',s)) setSpecifications(p=>p.map(x=>x.id===s.id?s:x)); }} onDeleteSpecification={async (id) => { if(await syncOperation('specifications','delete',null,id)) setSpecifications(p=>p.filter(x=>x.id!==id)); }} />;
       
       case 'contact': 
-        return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={(a) => syncOperation('artisans', 'insert', a)} onEditArtisan={(a) => syncOperation('artisans', 'update', a)} onDeleteArtisan={(id) => syncOperation('artisans', 'delete', null, id)} />;
+        return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={async (a) => { const n = {...a, id:`a_${Date.now()}`}; if(await syncOperation('artisans','insert',n)) setArtisans(p=>[...p, n as Artisan]); }} onEditArtisan={async (a) => { if(await syncOperation('artisans','update',a)) setArtisans(p=>p.map(x=>x.id===a.id?a:x)); }} onDeleteArtisan={async (id) => { if(await syncOperation('artisans','delete',null,id)) setArtisans(p=>p.filter(x=>x.id!==id)); }} />;
       
       case 'financial': 
-        return <FinancialManager documents={financialDocs} clubs={clubs} currentUser={currentUser} onAddDocument={(d) => { const n = {...d, id:`d_${Date.now()}`}; setFinancialDocs(p=>[...p, n as DocumentFile]); syncOperation('financial_documents', 'insert', n); }} onDeleteDocument={(id) => { setFinancialDocs(p=>p.filter(x=>x.id!==id)); syncOperation('financial_documents', 'delete', null, id); }} />;
+        return <FinancialManager documents={financialDocs} clubs={clubs} currentUser={currentUser} onAddDocument={async (d) => { const n = {...d, id:`d_${Date.now()}`}; if(await syncOperation('financial_documents','insert',n)) setFinancialDocs(p=>[...p, n as DocumentFile]); }} onDeleteDocument={async (id) => { if(await syncOperation('financial_documents','delete',null,id)) setFinancialDocs(p=>p.filter(x=>x.id!==id)); }} />;
       
       case 'documents': 
-        return <DocumentManager documents={technicalDocs} clubs={clubs} currentUser={currentUser} onAddDocument={(d) => { const n = {...d, id:`d_${Date.now()}`}; setTechnicalDocs(p=>[...p, n as DocumentFile]); syncOperation('technical_documents', 'insert', n); }} onDeleteDocument={(id) => { setTechnicalDocs(p=>p.filter(x=>x.id!==id)); syncOperation('technical_documents', 'delete', null, id); }} />;
+        return <DocumentManager documents={technicalDocs} clubs={clubs} currentUser={currentUser} onAddDocument={async (d) => { const n = {...d, id:`d_${Date.now()}`}; if(await syncOperation('technical_documents','insert',n)) setTechnicalDocs(p=>[...p, n as DocumentFile]); }} onDeleteDocument={async (id) => { if(await syncOperation('technical_documents','delete',null,id)) setTechnicalDocs(p=>p.filter(x=>x.id!==id)); }} />;
       
       case 'users': 
-        return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={(u, p) => { const n = {...u, id:`u_${Date.now()}`}; setUsers(prev=>[...prev, n as User]); if(p) setUserPasswords(prev=>({...prev, [n.id as string]: p})); syncOperation('users', 'insert', n); }} onEditUser={(u, p) => { setUsers(prev=>prev.map(x=>x.id===u.id?u:x)); if(p) setUserPasswords(prev=>({...prev, [u.id]: p})); syncOperation('users', 'update', u); }} onDeleteUser={(id) => { setUsers(prev=>prev.filter(x=>x.id!==id)); syncOperation('users', 'delete', null, id); }} />;
-      
-      case 'recycle_bin': 
-        return <RecycleBin deletedTickets={trashTickets} deletedChecks={trashChecks} deletedMaintenance={trashMaintenance} deletedPlanning={trashPlanning} currentUser={currentUser} onRestoreTicket={()=>{}} onRestoreCheck={()=>{}} onRestoreMaintenance={()=>{}} onRestorePlanning={()=>{}} onPermanentDeleteTicket={(id) => syncOperation('trash_tickets', 'delete', null, id)} onPermanentDeleteCheck={(id) => syncOperation('trash_checks', 'delete', null, id)} onPermanentDeleteMaintenance={(id) => syncOperation('trash_maintenance', 'delete', null, id)} onPermanentDeletePlanning={(id) => syncOperation('trash_planning', 'delete', null, id)} />;
+        return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={async (u, p) => { const n = {...u, id:`u_${Date.now()}`}; if(await syncOperation('users','insert',n)) { setUsers(prev=>[...prev, n as User]); if(p) setUserPasswords(prev=>({...prev, [n.id as string]: p})); } }} onEditUser={async (u, p) => { if(await syncOperation('users','update',u)) { setUsers(prev=>prev.map(x=>x.id===u.id?u:x)); if(p) setUserPasswords(prev=>({...prev, [u.id]: p})); } }} onDeleteUser={async (id) => { if(await syncOperation('users','delete',null,id)) setUsers(prev=>prev.filter(x=>x.id!==id)); }} />;
       
       case 'settings': 
-        return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={(c) => syncOperation('clubs', 'insert', c)} onDeleteClub={(id) => syncOperation('clubs', 'delete', null, id)} onUpdateClubSpaces={(id, spaces) => syncOperation('clubs', 'update', { spaces }, id)} onUpdateFailureTypes={() => {}} />;
+        return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={async (c) => { if(await syncOperation('clubs','insert',c)) setClubs(p=>[...p, c]); }} onDeleteClub={async (id) => { if(await syncOperation('clubs','delete',null,id)) setClubs(p=>p.filter(x=>x.id!==id)); }} onUpdateClubSpaces={async (id, spaces) => { if(await syncOperation('clubs','update',{spaces},id)) setClubs(p=>p.map(x=>x.id===id?{...x, spaces}:x)); }} onUpdateFailureTypes={() => {}} />;
       
       default: 
         return <Dashboard {...commonProps} tickets={tickets} />;
@@ -221,14 +207,23 @@ const App: React.FC = () => {
 
   return (
     <Layout user={currentUser} onLogout={handleLogout} activeTab={activeTab} onTabChange={setActiveTab}>
-      <div className={`mb-6 p-4 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg backdrop-blur-md ${dbStatus === 'CONNECTED' ? 'bg-green-500/10 border-green-500/30' : 'bg-brand-yellow/10 border-brand-yellow/30'}`}>
+      <div className={`mb-6 p-4 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg backdrop-blur-md transition-all ${dbStatus === 'CONNECTED' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
         <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-full ${dbStatus === 'CONNECTED' ? 'bg-green-500/20 text-green-400' : 'bg-brand-yellow/20 text-brand-yellow'}`}><ShieldCheck size={24} /></div>
+          <div className={`p-3 rounded-full ${dbStatus === 'CONNECTED' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+            {dbStatus === 'CONNECTED' ? <ShieldCheck size={24} /> : <CloudOff size={24} />}
+          </div>
           <div>
-            <h3 className="text-sm font-black uppercase tracking-widest text-white">{dbStatus === 'CONNECTED' ? 'Système Synchronisé' : 'Mode Démo / Hors-ligne'}</h3>
-            <p className="text-xs text-gray-400 font-medium">Navigation persistante ({activeTab}) active.</p>
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">
+               {dbStatus === 'CONNECTED' ? 'Stockage Supabase Connecté' : 'Erreur de Connexion Cloud'}
+            </h3>
+            <p className="text-xs text-gray-400 font-medium">
+               {dbStatus === 'CONNECTED' ? 'Toutes les données et photos sont synchronisées en temps réel.' : 'L\'application fonctionne en mode limité (données démo).'}
+            </p>
           </div>
         </div>
+        {dbStatus !== 'CONNECTED' && (
+           <button onClick={fetchData} className="px-4 py-2 bg-red-500/20 text-red-400 text-[10px] font-black uppercase border border-red-500/40 rounded-lg hover:bg-red-500/30 transition">Réessayer</button>
+        )}
       </div>
       {renderContent()}
     </Layout>

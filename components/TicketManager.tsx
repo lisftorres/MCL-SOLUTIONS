@@ -91,18 +91,15 @@ const TicketManager: React.FC<TicketManagerProps> = ({
 
   const startCamera = async () => {
     setIsCameraOpen(true);
-    // Délai pour assurer le rendu de l'élément video
     setTimeout(async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: { facingMode: 'environment' }
         });
-        if (videoRef.current) {
-           videoRef.current.srcObject = stream;
-        }
+        if (videoRef.current) videoRef.current.srcObject = stream;
       } catch (err) {
         console.error("Erreur accès caméra:", err);
-        alert("Impossible d'accéder à la caméra. Vérifiez vos réglages.");
+        alert("Impossible d'accéder à la caméra.");
         setIsCameraOpen(false);
       }
     }, 150);
@@ -204,15 +201,9 @@ const TicketManager: React.FC<TicketManagerProps> = ({
 
     if (isEditing && currentTicketId) {
         const originalTicket = tickets.find(t => t.id === currentTicketId);
-        if (originalTicket) {
-             onEditTicket({ ...originalTicket, ...commonData });
-        }
+        if (originalTicket) onEditTicket({ ...originalTicket, ...commonData });
     } else {
-        onCreateTicket({
-            ...commonData,
-            status: TicketStatus.OPEN,
-            createdBy: currentUser.id
-        });
+        onCreateTicket({ ...commonData, status: TicketStatus.OPEN, createdBy: currentUser.id });
     }
     stopCamera();
     setShowModal(false);
@@ -255,7 +246,7 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                      {(currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.MANAGER || ticket.createdBy === currentUser.id) && (
                         <>
                            <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(ticket); }} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-full transition" title="Modifier"><Edit2 size={16} /></button>
-                           <button onClick={(e) => { e.stopPropagation(); if (window.confirm("Envoyer ce ticket à la corbeille ?")) { onDeleteTicket(ticket.id); } }} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition" title="Supprimer"><Trash2 size={16} /></button>
+                           <button onClick={(e) => { e.stopPropagation(); if (window.confirm("Supprimer définitivement ce ticket ?")) onDeleteTicket(ticket.id); }} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition" title="Supprimer"><Trash2 size={16} /></button>
                         </>
                      )}
                   </div>
@@ -293,7 +284,8 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                      {(currentUser.role === UserRole.TECHNICIAN || currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.MANAGER) && ticket.status !== TicketStatus.RESOLVED && ticket.status !== TicketStatus.CANCELLED && (
                        <button onClick={(e) => { e.stopPropagation(); onUpdateStatus(ticket.id, TicketStatus.RESOLVED); }} className="flex-1 bg-green-500 text-white text-[10px] font-black uppercase py-2.5 rounded-lg hover:bg-green-600 transition shadow-lg flex items-center justify-center gap-2"><CheckCircle size={14} /> Clôturer</button>
                      )}
-                     {(currentUser.role === UserRole.TECHNICIAN || currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.MANAGER) && ticket.status === TicketStatus.OPEN && (
+                     {/* RESTRICTION: Bouton "Prendre" masqué pour les Managers, uniquement Admin et Tech */}
+                     {(currentUser.role === UserRole.TECHNICIAN || currentUser.role === UserRole.ADMIN) && ticket.status === TicketStatus.OPEN && (
                         <button onClick={(e) => { e.stopPropagation(); onUpdateStatus(ticket.id, TicketStatus.IN_PROGRESS); }} className="flex-1 bg-brand-yellow text-brand-dark text-[10px] font-black uppercase py-2.5 rounded-lg hover:bg-yellow-400 transition shadow-lg flex items-center justify-center gap-2"><Clock size={14} /> Prendre</button>
                      )}
                    </div>
@@ -307,12 +299,8 @@ const TicketManager: React.FC<TicketManagerProps> = ({
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col animate-fade-in-up">
             <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
-              <h2 className="text-xl font-black text-black uppercase tracking-tight">
-                {isEditing ? 'Modifier le Ticket' : 'Nouveau Signalement'}
-              </h2>
-              <button onClick={() => { stopCamera(); setShowModal(false); }} className="text-gray-400 hover:text-black transition-colors">
-                <X size={24} />
-              </button>
+              <h2 className="text-xl font-black text-black uppercase tracking-tight">{isEditing ? 'Modifier le Ticket' : 'Nouveau Signalement'}</h2>
+              <button onClick={() => { stopCamera(); setShowModal(false); }} className="text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
@@ -320,10 +308,8 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                  <div className="fixed inset-0 bg-black z-[80] flex flex-col items-center justify-center">
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain"></video>
                     <div className="absolute bottom-10 flex gap-6 items-center">
-                        <button type="button" onClick={stopCamera} className="bg-red-500 p-4 rounded-full text-white shadow-xl hover:bg-red-600 transition-all"><X size={24} /></button>
-                        <button type="button" onClick={takePhoto} className="bg-white p-6 rounded-full border-8 border-white/20 shadow-2xl hover:scale-105 active:scale-95 transition-all">
-                           <div className="w-12 h-12 bg-brand-yellow rounded-full"></div>
-                        </button>
+                        <button type="button" onClick={stopCamera} className="bg-red-500 p-4 rounded-full text-white shadow-xl"><X size={24} /></button>
+                        <button type="button" onClick={takePhoto} className="bg-white p-6 rounded-full border-8 border-white/20 shadow-2xl"><div className="w-12 h-12 bg-brand-yellow rounded-full"></div></button>
                     </div>
                  </div>
               )}
