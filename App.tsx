@@ -20,18 +20,27 @@ import { ShieldCheck } from 'lucide-react';
 import { supabase } from './services/supabase';
 
 const App: React.FC = () => {
-  // PERSISTENCE: Load from localStorage to prevent logout on refresh
+  // PERSISTENCE: Session, User and Active Tab
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('mcl_isAuthenticated') === 'true';
   });
+  
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('mcl_currentUser');
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
   });
 
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return localStorage.getItem('mcl_activeTab') || 'dashboard';
+  });
+
   const [dbStatus, setDbStatus] = useState<'CONNECTED' | 'DEMO' | 'ERROR'>('DEMO');
   
+  // Data States
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [userPasswords, setUserPasswords] = useState<Record<string, string>>(() => {
     const saved = localStorage.getItem('mcl_passwords');
@@ -55,15 +64,16 @@ const App: React.FC = () => {
   const [clubs, setClubs] = useState<Club[]>(MOCK_CLUBS);
   const [failureTypes, setFailureTypes] = useState<Record<TradeType, string[]>>(MOCK_FAILURE_TYPES);
 
-  // Sync session with localStorage
+  // Sync state to localStorage
   useEffect(() => {
     localStorage.setItem('mcl_isAuthenticated', isAuthenticated.toString());
+    localStorage.setItem('mcl_activeTab', activeTab);
     if (currentUser) {
       localStorage.setItem('mcl_currentUser', JSON.stringify(currentUser));
     } else {
       localStorage.removeItem('mcl_currentUser');
     }
-  }, [isAuthenticated, currentUser]);
+  }, [isAuthenticated, currentUser, activeTab]);
 
   useEffect(() => {
     localStorage.setItem('mcl_passwords', JSON.stringify(userPasswords));
@@ -105,13 +115,13 @@ const App: React.FC = () => {
       if (results[11].data) setTrashPlanning(results[11].data.map(d => d.content));
 
     } catch (e: any) {
-      console.error("Erreur sync:", e);
+      console.error("Erreur sync Supabase:", e);
       setDbStatus('ERROR');
     }
   };
 
   useEffect(() => {
-    if (supabase) fetchData();
+    fetchData();
   }, []);
 
   const syncOperation = async (table: string, method: 'insert' | 'update' | 'delete', data: any, id?: string) => {
@@ -131,7 +141,8 @@ const App: React.FC = () => {
       const storedPass = userPasswords[foundUser.id] || "123456";
       if (storedPass === password) { 
         setCurrentUser(foundUser); 
-        setIsAuthenticated(true); 
+        setIsAuthenticated(true);
+        setActiveTab('dashboard'); // Reset to dashboard on fresh login
         return true; 
       }
     }
@@ -141,8 +152,8 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setCurrentUser(null);
-    localStorage.removeItem('mcl_isAuthenticated');
-    localStorage.removeItem('mcl_currentUser');
+    setActiveTab('dashboard');
+    localStorage.clear();
   };
 
   const moveToTrash = async (item: any, sourceTable: string, trashTable: string) => {
@@ -162,21 +173,49 @@ const App: React.FC = () => {
     const commonProps = { currentUser, clubs, users };
 
     switch (activeTab) {
-      case 'dashboard': return <Dashboard {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} />;
-      case 'planning': return <GeneralPlanning events={planningEvents} currentUser={currentUser} onAddEvent={(e) => syncOperation('planning', 'insert', e)} onEditEvent={(e) => syncOperation('planning', 'update', e)} onDeleteEvent={(id) => syncOperation('trash_planning', 'insert', {id, content: planningEvents.find(p=>p.id===id)})} />;
-      case 'tickets': return <TicketManager {...commonProps} tickets={tickets} failureTypes={failureTypes} onCreateTicket={handleTicketCreate} onEditTicket={(t) => syncOperation('tickets', 'update', t)} onDeleteTicket={(id) => { const item = tickets.find(t=>t.id===id); if(item) { setTickets(prev=>prev.filter(x=>x.id!==id)); setTrashTickets(p=>[...p, item]); moveToTrash(item, 'tickets', 'trash_tickets'); }}} onUpdateStatus={(id, status) => syncOperation('tickets', 'update', { status }, id)} />;
-      case 'checks': return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={(id, items, status) => syncOperation('checks', 'update', { checklistItems: items, status }, id)} onCreateCheck={(c) => syncOperation('checks', 'insert', c)} onEditCheck={(c) => syncOperation('checks', 'update', c)} onDeleteCheck={(id) => { const item = checks.find(c=>c.id===id); if(item) { setChecks(prev=>prev.filter(x=>x.id!==id)); setTrashChecks(p=>[...p, item]); moveToTrash(item, 'checks', 'trash_checks'); }}} />;
-      case 'maintenance': return <MaintenanceSchedule {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} onAddEvent={(m) => syncOperation('maintenance', 'insert', m)} onEditEvent={(m) => syncOperation('maintenance', 'update', m)} onDeleteEvent={(id) => { const item = maintenanceEvents.find(m=>m.id===id); if(item) { setMaintenanceEvents(prev=>prev.filter(x=>x.id!==id)); setTrashMaintenance(p=>[...p, item]); moveToTrash(item, 'maintenance', 'trash_maintenance'); }}} />;
-      case 'specs': return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={(s) => syncOperation('specifications', 'insert', s)} onEditSpecification={(s) => syncOperation('specifications', 'update', s)} onDeleteSpecification={(id) => syncOperation('specifications', 'delete', null, id)} />;
-      case 'contact': return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={(a) => syncOperation('artisans', 'insert', a)} onEditArtisan={(a) => syncOperation('artisans', 'update', a)} onDeleteArtisan={(id) => syncOperation('artisans', 'delete', null, id)} />;
-      case 'financial': return <FinancialManager documents={financialDocs} clubs={clubs} currentUser={currentUser} onAddDocument={(d) => { const n = {...d, id:`d_${Date.now()}`}; setFinancialDocs(p=>[...p, n as DocumentFile]); syncOperation('financial_documents', 'insert', n); }} onDeleteDocument={(id) => { setFinancialDocs(p=>p.filter(x=>x.id!==id)); syncOperation('financial_documents', 'delete', null, id); }} />;
-      case 'documents': return <DocumentManager documents={technicalDocs} clubs={clubs} currentUser={currentUser} onAddDocument={(d) => { const n = {...d, id:`d_${Date.now()}`}; setTechnicalDocs(p=>[...p, n as DocumentFile]); syncOperation('technical_documents', 'insert', n); }} onDeleteDocument={(id) => { setTechnicalDocs(p=>p.filter(x=>x.id!==id)); syncOperation('technical_documents', 'delete', null, id); }} />;
-      case 'users': return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={(u, p) => { const n = {...u, id:`u_${Date.now()}`}; setUsers(prev=>[...prev, n as User]); if(p) setUserPasswords(prev=>({...prev, [n.id as string]: p})); syncOperation('users', 'insert', n); }} onEditUser={(u, p) => { setUsers(prev=>prev.map(x=>x.id===u.id?u:x)); if(p) setUserPasswords(prev=>({...prev, [u.id]: p})); syncOperation('users', 'update', u); }} onDeleteUser={(id) => { setUsers(prev=>prev.filter(x=>x.id!==id)); syncOperation('users', 'delete', null, id); }} />;
-      case 'recycle_bin': return <RecycleBin deletedTickets={trashTickets} deletedChecks={trashChecks} deletedMaintenance={trashMaintenance} deletedPlanning={trashPlanning} currentUser={currentUser} onRestoreTicket={()=>{}} onRestoreCheck={()=>{}} onRestoreMaintenance={()=>{}} onRestorePlanning={()=>{}} onPermanentDeleteTicket={(id) => syncOperation('trash_tickets', 'delete', null, id)} onPermanentDeleteCheck={(id) => syncOperation('trash_checks', 'delete', null, id)} onPermanentDeleteMaintenance={(id) => syncOperation('trash_maintenance', 'delete', null, id)} onPermanentDeletePlanning={(id) => syncOperation('trash_planning', 'delete', null, id)} />;
-      case 'settings': return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={(c) => syncOperation('clubs', 'insert', c)} onDeleteClub={(id) => syncOperation('clubs', 'delete', null, id)} onUpdateClubSpaces={(id, spaces) => syncOperation('clubs', 'update', { spaces }, id)} onUpdateFailureTypes={() => {}} />;
-      default: return <Dashboard {...commonProps} tickets={tickets} />;
+      case 'dashboard': 
+        return <Dashboard {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} />;
+      
+      case 'planning': 
+        return <GeneralPlanning events={planningEvents} currentUser={currentUser} onAddEvent={(e) => syncOperation('planning', 'insert', e)} onEditEvent={(e) => syncOperation('planning', 'update', e)} onDeleteEvent={(id) => syncOperation('trash_planning', 'insert', {id, content: planningEvents.find(p=>p.id===id)})} />;
+      
+      case 'tickets': 
+        return <TicketManager {...commonProps} tickets={tickets} failureTypes={failureTypes} onCreateTicket={handleTicketCreate} onEditTicket={(t) => syncOperation('tickets', 'update', t)} onDeleteTicket={(id) => { const item = tickets.find(t=>t.id===id); if(item) { setTickets(prev=>prev.filter(x=>x.id!==id)); setTrashTickets(p=>[...p, item]); moveToTrash(item, 'tickets', 'trash_tickets'); }}} onUpdateStatus={(id, status) => syncOperation('tickets', 'update', { status }, id)} />;
+      
+      case 'checks': 
+        return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={(id, items, status) => syncOperation('checks', 'update', { checklistItems: items, status }, id)} onCreateCheck={(c) => syncOperation('checks', 'insert', c)} onEditCheck={(c) => syncOperation('checks', 'update', c)} onDeleteCheck={(id) => { const item = checks.find(c=>c.id===id); if(item) { setChecks(prev=>prev.filter(x=>x.id!==id)); setTrashChecks(p=>[...p, item]); moveToTrash(item, 'checks', 'trash_checks'); }}} />;
+      
+      case 'maintenance': 
+        return <MaintenanceSchedule {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} onAddEvent={(m) => syncOperation('maintenance', 'insert', m)} onEditEvent={(m) => syncOperation('maintenance', 'update', m)} onDeleteEvent={(id) => { const item = maintenanceEvents.find(m=>m.id===id); if(item) { setMaintenanceEvents(prev=>prev.filter(x=>x.id!==id)); setTrashMaintenance(p=>[...p, item]); moveToTrash(item, 'maintenance', 'trash_maintenance'); }}} />;
+      
+      case 'specs': 
+        return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={(s) => syncOperation('specifications', 'insert', s)} onEditSpecification={(s) => syncOperation('specifications', 'update', s)} onDeleteSpecification={(id) => syncOperation('specifications', 'delete', null, id)} />;
+      
+      case 'contact': 
+        return <ContactBook artisans={artisans} currentUser={currentUser} onAddArtisan={(a) => syncOperation('artisans', 'insert', a)} onEditArtisan={(a) => syncOperation('artisans', 'update', a)} onDeleteArtisan={(id) => syncOperation('artisans', 'delete', null, id)} />;
+      
+      case 'financial': 
+        return <FinancialManager documents={financialDocs} clubs={clubs} currentUser={currentUser} onAddDocument={(d) => { const n = {...d, id:`d_${Date.now()}`}; setFinancialDocs(p=>[...p, n as DocumentFile]); syncOperation('financial_documents', 'insert', n); }} onDeleteDocument={(id) => { setFinancialDocs(p=>p.filter(x=>x.id!==id)); syncOperation('financial_documents', 'delete', null, id); }} />;
+      
+      case 'documents': 
+        return <DocumentManager documents={technicalDocs} clubs={clubs} currentUser={currentUser} onAddDocument={(d) => { const n = {...d, id:`d_${Date.now()}`}; setTechnicalDocs(p=>[...p, n as DocumentFile]); syncOperation('technical_documents', 'insert', n); }} onDeleteDocument={(id) => { setTechnicalDocs(p=>p.filter(x=>x.id!==id)); syncOperation('technical_documents', 'delete', null, id); }} />;
+      
+      case 'users': 
+        return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={(u, p) => { const n = {...u, id:`u_${Date.now()}`}; setUsers(prev=>[...prev, n as User]); if(p) setUserPasswords(prev=>({...prev, [n.id as string]: p})); syncOperation('users', 'insert', n); }} onEditUser={(u, p) => { setUsers(prev=>prev.map(x=>x.id===u.id?u:x)); if(p) setUserPasswords(prev=>({...prev, [u.id]: p})); syncOperation('users', 'update', u); }} onDeleteUser={(id) => { setUsers(prev=>prev.filter(x=>x.id!==id)); syncOperation('users', 'delete', null, id); }} />;
+      
+      case 'recycle_bin': 
+        return <RecycleBin deletedTickets={trashTickets} deletedChecks={trashChecks} deletedMaintenance={trashMaintenance} deletedPlanning={trashPlanning} currentUser={currentUser} onRestoreTicket={()=>{}} onRestoreCheck={()=>{}} onRestoreMaintenance={()=>{}} onRestorePlanning={()=>{}} onPermanentDeleteTicket={(id) => syncOperation('trash_tickets', 'delete', null, id)} onPermanentDeleteCheck={(id) => syncOperation('trash_checks', 'delete', null, id)} onPermanentDeleteMaintenance={(id) => syncOperation('trash_maintenance', 'delete', null, id)} onPermanentDeletePlanning={(id) => syncOperation('trash_planning', 'delete', null, id)} />;
+      
+      case 'settings': 
+        return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={(c) => syncOperation('clubs', 'insert', c)} onDeleteClub={(id) => syncOperation('clubs', 'delete', null, id)} onUpdateClubSpaces={(id, spaces) => syncOperation('clubs', 'update', { spaces }, id)} onUpdateFailureTypes={() => {}} />;
+      
+      default: 
+        return <Dashboard {...commonProps} tickets={tickets} />;
     }
   };
+
+  // Prevent flash of login screen if we are authenticated
+  if (isAuthenticated && !currentUser) return <div className="min-h-screen bg-brand-dark flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-brand-yellow"></div></div>;
 
   if (!isAuthenticated || !currentUser) return <Login onLogin={handleLogin} />;
 
@@ -186,8 +225,8 @@ const App: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className={`p-3 rounded-full ${dbStatus === 'CONNECTED' ? 'bg-green-500/20 text-green-400' : 'bg-brand-yellow/20 text-brand-yellow'}`}><ShieldCheck size={24} /></div>
           <div>
-            <h3 className="text-sm font-black uppercase tracking-widest text-white">{dbStatus === 'CONNECTED' ? 'Système Connecté' : 'Mode Hors-Ligne'}</h3>
-            <p className="text-xs text-gray-400 font-medium">Session persistante activée.</p>
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">{dbStatus === 'CONNECTED' ? 'Système Synchronisé' : 'Mode Démo / Hors-ligne'}</h3>
+            <p className="text-xs text-gray-400 font-medium">Session persistante et navigation sauvegardée.</p>
           </div>
         </div>
       </div>
