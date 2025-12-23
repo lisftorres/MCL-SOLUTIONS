@@ -91,16 +91,21 @@ const TicketManager: React.FC<TicketManagerProps> = ({
 
   const startCamera = async () => {
     setIsCameraOpen(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' }
-      });
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch (err) {
-      console.error("Erreur accès caméra:", err);
-      alert("Impossible d'accéder à la caméra.");
-      setIsCameraOpen(false);
-    }
+    // Délai pour assurer le rendu de l'élément video
+    setTimeout(async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' }
+        });
+        if (videoRef.current) {
+           videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error("Erreur accès caméra:", err);
+        alert("Impossible d'accéder à la caméra. Vérifiez vos réglages.");
+        setIsCameraOpen(false);
+      }
+    }, 150);
   };
 
   const stopCamera = () => {
@@ -311,7 +316,6 @@ const TicketManager: React.FC<TicketManagerProps> = ({
             </div>
             
             <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
-              {/* CAMÉRA OVERLAY - CORRECTION ICI */}
               {isCameraOpen && (
                  <div className="fixed inset-0 bg-black z-[80] flex flex-col items-center justify-center">
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain"></video>

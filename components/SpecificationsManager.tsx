@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Specification, User, UserRole } from '../types';
 import { Folder, Search, Plus, X, Camera, RefreshCw, ChevronRight, PenTool, LayoutTemplate, Tag, Upload, FileText, Download, Trash2, Eye, Info, CheckCircle2, ArrowLeft } from 'lucide-react';
 
@@ -68,7 +68,7 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
     setIsEditing(true);
     setFormData({ ...spec });
     setShowModal(true);
-    setViewingSpec(null); // Close viewing if opening edit
+    setViewingSpec(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -82,28 +82,29 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
     setShowModal(false);
   };
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm("Supprimer définitivement cette fiche technique ?")) {
-      onDeleteSpecification(id);
-      if (viewingSpec?.id === id) setViewingSpec(null);
-    }
-  };
-
   const startCamera = async () => {
     setIsCameraOpen(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch (err) {
-      alert("Impossible d'accéder à la caméra.");
-      setIsCameraOpen(false);
-    }
+    // Timeout technique pour laisser le temps au portail vidéo de s'afficher
+    setTimeout(async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+          });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (err) {
+          console.error("Caméra error:", err);
+          alert("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+          setIsCameraOpen(false);
+        }
+    }, 150);
   };
 
   const stopCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
     }
     setIsCameraOpen(false);
@@ -118,11 +119,16 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
       const context = canvas.getContext('2d');
       if (context) {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        setFormData({ ...formData, imageUrl: canvas.toDataURL('image/jpeg', 0.8) });
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setFormData(prev => ({ ...prev, imageUrl: dataUrl }));
         stopCamera();
       }
     }
   };
+
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -223,7 +229,6 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
         </div>
       )}
 
-      {/* Visualisation complète (Fiche Technique) */}
       {viewingSpec && (
         <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[95vh]">
@@ -245,7 +250,6 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
 
             <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                  {/* Colonne Gauche: Image */}
                   <div className="lg:col-span-5 space-y-6">
                      <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner group">
                         {viewingSpec.imageUrl ? (
@@ -284,7 +288,6 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
                      )}
                   </div>
 
-                  {/* Colonne Droite: Détails */}
                   <div className="lg:col-span-7 space-y-8">
                      <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 shadow-inner">
                         <div className="flex items-center gap-3 mb-6">
@@ -323,7 +326,6 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
         </div>
       )}
 
-      {/* Modal d'édition/création */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[95vh]">
@@ -336,7 +338,7 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
                  <div className="fixed inset-0 bg-black z-[80] flex flex-col items-center justify-center">
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain"></video>
                     <div className="absolute bottom-10 flex gap-6 items-center">
-                        <button type="button" onClick={stopCamera} className="bg-red-50 p-4 rounded-full text-white shadow-xl"><X size={24} /></button>
+                        <button type="button" onClick={stopCamera} className="bg-red-500 p-4 rounded-full text-white shadow-xl"><X size={24} /></button>
                         <button type="button" onClick={takePhoto} className="bg-white p-6 rounded-full border-8 border-white/20 shadow-2xl"><div className="w-12 h-12 bg-brand-yellow rounded-full"></div></button>
                     </div>
                  </div>
@@ -392,6 +394,7 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
                     {formData.documentName && <p className="text-[9px] text-green-600 font-black uppercase truncate mt-1">{formData.documentName}</p>}
                  </div>
               </div>
+              <canvas ref={canvasRef} className="hidden"></canvas>
               <div className="pt-6 flex gap-4 border-t border-gray-100 sticky bottom-0 bg-white">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-100 text-gray-500 font-black uppercase py-4 rounded-xl hover:bg-gray-200 transition-all">Annuler</button>
                 <button type="submit" className="flex-1 bg-brand-yellow text-brand-dark font-black uppercase py-4 rounded-xl hover:bg-yellow-400 shadow-xl shadow-brand-yellow/30 transition-all">
