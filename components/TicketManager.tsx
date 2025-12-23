@@ -309,7 +309,21 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                 <X size={24} />
               </button>
             </div>
+            
             <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+              {/* CAMÉRA OVERLAY - CORRECTION ICI */}
+              {isCameraOpen && (
+                 <div className="fixed inset-0 bg-black z-[80] flex flex-col items-center justify-center">
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain"></video>
+                    <div className="absolute bottom-10 flex gap-6 items-center">
+                        <button type="button" onClick={stopCamera} className="bg-red-500 p-4 rounded-full text-white shadow-xl hover:bg-red-600 transition-all"><X size={24} /></button>
+                        <button type="button" onClick={takePhoto} className="bg-white p-6 rounded-full border-8 border-white/20 shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                           <div className="w-12 h-12 bg-brand-yellow rounded-full"></div>
+                        </button>
+                    </div>
+                 </div>
+              )}
+
               <div className="space-y-1">
                 <label className="block text-[11px] font-black text-black uppercase tracking-widest">Club concerné</label>
                 <select className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" value={ticketClub} onChange={e => handleClubChange(e.target.value)}>
@@ -364,6 +378,7 @@ const TicketManager: React.FC<TicketManagerProps> = ({
                      </div>
                   </div>
                 )}
+                <canvas ref={canvasRef} className="hidden"></canvas>
               </div>
 
               <div className="pt-6 flex gap-4 sticky bottom-0 bg-white">

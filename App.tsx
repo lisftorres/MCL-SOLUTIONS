@@ -142,7 +142,7 @@ const App: React.FC = () => {
       if (storedPass === password) { 
         setCurrentUser(foundUser); 
         setIsAuthenticated(true);
-        setActiveTab('dashboard'); // Reset to dashboard on fresh login
+        // On ne change pas l'onglet ici pour permettre le retour sur l'onglet précédent via localStorage
         return true; 
       }
     }
@@ -172,6 +172,7 @@ const App: React.FC = () => {
     if (!currentUser) return null;
     const commonProps = { currentUser, clubs, users };
 
+    // Debug cases mapping to Layout.tsx IDs
     switch (activeTab) {
       case 'dashboard': 
         return <Dashboard {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} />;
@@ -214,7 +215,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Prevent flash of login screen if we are authenticated
   if (isAuthenticated && !currentUser) return <div className="min-h-screen bg-brand-dark flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-brand-yellow"></div></div>;
 
   if (!isAuthenticated || !currentUser) return <Login onLogin={handleLogin} />;
@@ -226,7 +226,7 @@ const App: React.FC = () => {
           <div className={`p-3 rounded-full ${dbStatus === 'CONNECTED' ? 'bg-green-500/20 text-green-400' : 'bg-brand-yellow/20 text-brand-yellow'}`}><ShieldCheck size={24} /></div>
           <div>
             <h3 className="text-sm font-black uppercase tracking-widest text-white">{dbStatus === 'CONNECTED' ? 'Système Synchronisé' : 'Mode Démo / Hors-ligne'}</h3>
-            <p className="text-xs text-gray-400 font-medium">Session persistante et navigation sauvegardée.</p>
+            <p className="text-xs text-gray-400 font-medium">Navigation persistante ({activeTab}) active.</p>
           </div>
         </div>
       </div>
