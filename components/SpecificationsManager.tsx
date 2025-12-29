@@ -71,6 +71,14 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
     setViewingSpec(null);
   };
 
+  const handleDelete = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer définitivement cette fiche technique ?")) {
+      onDeleteSpecification(id);
+      if (viewingSpec?.id === id) setViewingSpec(null);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing && formData.id) {
@@ -84,7 +92,6 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
 
   const startCamera = async () => {
     setIsCameraOpen(true);
-    // Timeout technique pour laisser le temps au portail vidéo de s'afficher
     setTimeout(async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -200,9 +207,14 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
                       <Eye size={18} />
                     </button>
                     {currentUser.role === UserRole.ADMIN && (
-                      <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(spec); }} className="bg-blue-500 text-white p-3 rounded-xl hover:bg-blue-600 transition-all shadow-xl">
-                        <PenTool size={18} />
-                      </button>
+                      <>
+                        <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(spec); }} className="bg-blue-500 text-white p-3 rounded-xl hover:bg-blue-600 transition-all shadow-xl">
+                          <PenTool size={18} />
+                        </button>
+                        <button onClick={(e) => handleDelete(spec.id, e)} className="bg-red-500 text-white p-3 rounded-xl hover:bg-red-600 transition-all shadow-xl">
+                          <Trash2 size={18} />
+                        </button>
+                      </>
                     )}
                   </div>
                   <div className="absolute bottom-4 left-4">
@@ -242,7 +254,10 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
               </div>
               <div className="flex gap-3">
                  {currentUser.role === UserRole.ADMIN && (
-                   <button onClick={() => handleOpenEdit(viewingSpec)} className="bg-blue-500 text-white p-3 rounded-xl hover:bg-blue-600 transition-all flex items-center gap-2 font-black text-xs uppercase tracking-tight shadow-lg shadow-blue-500/20"><PenTool size={18} /> Modifier</button>
+                   <>
+                    <button onClick={() => handleOpenEdit(viewingSpec)} className="bg-blue-500 text-white p-3 rounded-xl hover:bg-blue-600 transition-all flex items-center gap-2 font-black text-xs uppercase tracking-tight shadow-lg shadow-blue-500/20"><PenTool size={18} /> Modifier</button>
+                    <button onClick={() => handleDelete(viewingSpec.id)} className="bg-red-500 text-white p-3 rounded-xl hover:bg-red-600 transition-all flex items-center gap-2 font-black text-xs uppercase tracking-tight shadow-lg shadow-red-500/20"><Trash2 size={18} /> Supprimer</button>
+                   </>
                  )}
                  <button onClick={() => setViewingSpec(null)} className="text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
               </div>
@@ -350,7 +365,7 @@ const SpecificationsManager: React.FC<SpecificationsManagerProps> = ({
                 </div>
                 <div className="space-y-1">
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Nom de l'élément</label>
-                  <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" placeholder="Ex: Mitigeur" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                  <input type="text" required className="w-full bg-gray-50 border border-gray-300 rounded-xl p-4 text-black font-black outline-none focus:ring-2 focus:ring-brand-yellow transition-all" placeholder="Ex: Mitigeur" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
