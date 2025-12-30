@@ -36,7 +36,7 @@ const App: React.FC = () => {
 
   const [dbStatus, setDbStatus] = useState<'CONNECTED' | 'DEMO' | 'ERROR'>('DEMO');
   
-  // Data States - Initialized with Empty arrays, filled by Supabase
+  // Data States
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [checks, setChecks] = useState<PeriodicCheck[]>([]);
@@ -74,6 +74,7 @@ const App: React.FC = () => {
       const { data: techData } = await supabase.from('technical_documents').select('*');
       const { data: artData } = await supabase.from('artisans').select('*');
       const { data: usersData } = await supabase.from('users').select('*');
+      const { data: specsData } = await supabase.from('specifications').select('*');
 
       setDbStatus('CONNECTED');
       if (clubsData) setClubs(clubsData);
@@ -85,6 +86,7 @@ const App: React.FC = () => {
       if (techData) setTechnicalDocs(techData);
       if (artData) setArtisans(artData);
       if (usersData) setUsers(usersData);
+      if (specsData) setSpecifications(specsData);
     } catch (e: any) {
       console.error("Supabase Fetch Error:", e);
       setDbStatus('ERROR');
@@ -94,7 +96,7 @@ const App: React.FC = () => {
   useEffect(() => { fetchData(); }, []);
 
   const syncOperation = async (table: string, method: 'insert' | 'update' | 'delete', data: any, id?: string) => {
-    if (!supabase) return true; // Mock success in demo mode
+    if (!supabase) return true;
     try {
       if (method === 'insert') {
         const { error } = await supabase.from(table).insert([data]);
@@ -111,7 +113,7 @@ const App: React.FC = () => {
       return true;
     } catch (e) {
       console.error(`Supabase Sync Error (${table}):`, e);
-      alert("Erreur de synchronisation avec la base de données.");
+      alert("Erreur de synchronisation Cloud.");
       return false;
     }
   };
@@ -136,28 +138,6 @@ const App: React.FC = () => {
     localStorage.clear();
   };
 
-  // HANDLERS WITH SUPABASE SYNC
-  const handleTicketCreate = async (t: Partial<Ticket>) => {
-    const newTicket = { ...t, id: `t_${Date.now()}`, createdAt: new Date().toISOString() } as Ticket;
-    const success = await syncOperation('tickets', 'insert', newTicket);
-    if (success) setTickets(prev => [newTicket, ...prev]);
-  };
-
-  const handleTicketUpdate = async (t: Ticket) => {
-    const success = await syncOperation('tickets', 'update', t);
-    if (success) setTickets(prev => prev.map(x => x.id === t.id ? t : x));
-  };
-
-  const handleTicketDelete = async (id: string) => {
-    const success = await syncOperation('tickets', 'delete', null, id);
-    if (success) setTickets(prev => prev.filter(x => x.id !== id));
-  };
-
-  const handleTicketUpdateStatus = async (id: string, status: TicketStatus) => {
-    const success = await syncOperation('tickets', 'update', { status }, id);
-    if (success) setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
-  };
-
   const renderContent = () => {
     if (!currentUser) return null;
     const commonProps = { currentUser, clubs, users };
@@ -167,16 +147,16 @@ const App: React.FC = () => {
         return <Dashboard {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} />;
       
       case 'tickets': 
-        return <TicketManager {...commonProps} tickets={tickets} failureTypes={failureTypes} onCreateTicket={handleTicketCreate} onEditTicket={handleTicketUpdate} onDeleteTicket={handleTicketDelete} onUpdateStatus={handleTicketUpdateStatus} />;
+        return <TicketManager {...commonProps} tickets={tickets.filter(t => !t.deleted)} failureTypes={failureTypes} onCreateTicket={async (t) => { const n = { ...t, id: `t_${Date.now()}`, createdAt: new Date().toISOString() } as Ticket; if(await syncOperation('tickets', 'insert', n)) setTickets(p => [n, ...p]); }} onEditTicket={async (t) => { if(await syncOperation('tickets', 'update', t)) setTickets(p => p.map(x => x.id === t.id ? t : x)); }} onDeleteTicket={async (id) => { if(await syncOperation('tickets', 'update', { deleted: true }, id)) setTickets(p => p.map(x => x.id === id ? { ...x, deleted: true } : x)); }} onUpdateStatus={async (id, status) => { if(await syncOperation('tickets', 'update', { status }, id)) setTickets(p => p.map(t => t.id === id ? { ...t, status } : t)); }} />;
       
       case 'planning': 
-        return <GeneralPlanning events={planningEvents} currentUser={currentUser} onAddEvent={async (e) => { const n = {...e, id:`p_${Date.now()}`}; if(await syncOperation('planning','insert',n)) setPlanningEvents(p=>[...p, n as PlanningEvent]); }} onEditEvent={async (e) => { if(await syncOperation('planning','update',e)) setPlanningEvents(p=>p.map(x=>x.id===e.id?e:x)); }} onDeleteEvent={async (id) => { if(await syncOperation('planning','delete',null,id)) setPlanningEvents(p=>p.filter(x=>x.id!==id)); }} />;
+        return <GeneralPlanning events={planningEvents.filter(e => !e.deleted)} currentUser={currentUser} onAddEvent={async (e) => { const n = {...e, id:`p_${Date.now()}`}; if(await syncOperation('planning','insert',n)) setPlanningEvents(p=>[...p, n as PlanningEvent]); }} onEditEvent={async (e) => { if(await syncOperation('planning','update',e)) setPlanningEvents(p=>p.map(x=>x.id===e.id?e:x)); }} onDeleteEvent={async (id) => { if(await syncOperation('planning','update',{deleted:true},id)) setPlanningEvents(p=>p.map(x=>x.id===id?{...x, deleted:true}:x)); }} />;
       
       case 'checks': 
-        return <CheckManager checks={checks} clubs={clubs} user={currentUser} onUpdateCheck={async (id, items, status) => { if(await syncOperation('checks','update',{checklistItems:items, status},id)) setChecks(p=>p.map(x=>x.id===id?{...x, checklistItems:items, status}:x)); }} onCreateCheck={async (c) => { const n = {...c, id:`c_${Date.now()}`}; if(await syncOperation('checks','insert',n)) setChecks(p=>[...p, n as PeriodicCheck]); }} onEditCheck={async (c) => { if(await syncOperation('checks','update',c)) setChecks(p=>p.map(x=>x.id===c.id?c:x)); }} onDeleteCheck={async (id) => { if(await syncOperation('checks','delete',null,id)) setChecks(p=>p.filter(x=>x.id!==id)); }} />;
+        return <CheckManager checks={checks.filter(c => !c.deleted)} clubs={clubs} user={currentUser} onUpdateCheck={async (id, items, status) => { if(await syncOperation('checks','update',{checklistItems:items, status},id)) setChecks(p=>p.map(x=>x.id===id?{...x, checklistItems:items, status}:x)); }} onCreateCheck={async (c) => { const n = {...c, id:`c_${Date.now()}`}; if(await syncOperation('checks','insert',n)) setChecks(p=>[...p, n as PeriodicCheck]); }} onEditCheck={async (c) => { if(await syncOperation('checks','update',c)) setChecks(p=>p.map(x=>x.id===c.id?c:x)); }} onDeleteCheck={async (id) => { if(await syncOperation('checks','update',{deleted:true},id)) setChecks(p=>p.map(x=>x.id===id?{...x, deleted:true}:x)); }} />;
       
       case 'maintenance': 
-        return <MaintenanceSchedule {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents} onAddEvent={async (m) => { const n = {...m, id:`m_${Date.now()}`}; if(await syncOperation('maintenance','insert',n)) setMaintenanceEvents(p=>[...p, n as MaintenanceEvent]); }} onEditEvent={async (m) => { if(await syncOperation('maintenance','update',m)) setMaintenanceEvents(p=>p.map(x=>x.id===m.id?m:x)); }} onDeleteEvent={async (id) => { if(await syncOperation('maintenance','delete',null,id)) setMaintenanceEvents(p=>p.filter(x=>x.id!==id)); }} />;
+        return <MaintenanceSchedule {...commonProps} tickets={tickets} checks={checks} maintenanceEvents={maintenanceEvents.filter(m => !m.deleted)} onAddEvent={async (m) => { const n = {...m, id:`m_${Date.now()}`}; if(await syncOperation('maintenance','insert',n)) setMaintenanceEvents(p=>[...p, n as MaintenanceEvent]); }} onEditEvent={async (m) => { if(await syncOperation('maintenance','update',m)) setMaintenanceEvents(p=>p.map(x=>x.id===m.id?m:x)); }} onDeleteEvent={async (id) => { if(await syncOperation('maintenance','update',{deleted:true},id)) setMaintenanceEvents(p=>p.map(x=>x.id===id?{...x, deleted:true}:x)); }} />;
       
       case 'specs': 
         return <SpecificationsManager specifications={specifications} currentUser={currentUser} onAddSpecification={async (s) => { const n = {...s, id:`s_${Date.now()}`}; if(await syncOperation('specifications','insert',n)) setSpecifications(p=>[...p, n as Specification]); }} onEditSpecification={async (s) => { if(await syncOperation('specifications','update',s)) setSpecifications(p=>p.map(x=>x.id===s.id?s:x)); }} onDeleteSpecification={async (id) => { if(await syncOperation('specifications','delete',null,id)) setSpecifications(p=>p.filter(x=>x.id!==id)); }} />;
@@ -193,6 +173,25 @@ const App: React.FC = () => {
       case 'users': 
         return <UserManager users={users} clubs={clubs} userPasswords={userPasswords} onAddUser={async (u, p) => { const n = {...u, id:`u_${Date.now()}`}; if(await syncOperation('users','insert',n)) { setUsers(prev=>[...prev, n as User]); if(p) setUserPasswords(prev=>({...prev, [n.id as string]: p})); } }} onEditUser={async (u, p) => { if(await syncOperation('users','update',u)) { setUsers(prev=>prev.map(x=>x.id===u.id?u:x)); if(p) setUserPasswords(prev=>({...prev, [u.id]: p})); } }} onDeleteUser={async (id) => { if(await syncOperation('users','delete',null,id)) setUsers(prev=>prev.filter(x=>x.id!==id)); }} />;
       
+      case 'recycle_bin':
+        return (
+          <RecycleBin 
+            currentUser={currentUser}
+            deletedTickets={tickets.filter(t => t.deleted)}
+            deletedChecks={checks.filter(c => c.deleted)}
+            deletedMaintenance={maintenanceEvents.filter(m => m.deleted)}
+            deletedPlanning={planningEvents.filter(p => p.deleted)}
+            onRestoreTicket={async (id) => { if(await syncOperation('tickets', 'update', { deleted: false }, id)) setTickets(p => p.map(x => x.id === id ? { ...x, deleted: false } : x)); }}
+            onRestoreCheck={async (id) => { if(await syncOperation('checks', 'update', { deleted: false }, id)) setChecks(p => p.map(x => x.id === id ? { ...x, deleted: false } : x)); }}
+            onRestoreMaintenance={async (id) => { if(await syncOperation('maintenance', 'update', { deleted: false }, id)) setMaintenanceEvents(p => p.map(x => x.id === id ? { ...x, deleted: false } : x)); }}
+            onRestorePlanning={async (id) => { if(await syncOperation('planning', 'update', { deleted: false }, id)) setPlanningEvents(p => p.map(x => x.id === id ? { ...x, deleted: false } : x)); }}
+            onPermanentDeleteTicket={async (id) => { if(await syncOperation('tickets', 'delete', null, id)) setTickets(p => p.filter(x => x.id !== id)); }}
+            onPermanentDeleteCheck={async (id) => { if(await syncOperation('checks', 'delete', null, id)) setChecks(p => p.filter(x => x.id !== id)); }}
+            onPermanentDeleteMaintenance={async (id) => { if(await syncOperation('maintenance', 'delete', null, id)) setMaintenanceEvents(p => p.filter(x => x.id !== id)); }}
+            onPermanentDeletePlanning={async (id) => { if(await syncOperation('planning', 'delete', null, id)) setPlanningEvents(p => p.filter(x => x.id !== id)); }}
+          />
+        );
+
       case 'settings': 
         return <SettingsManager clubs={clubs} failureTypes={failureTypes} onAddClub={async (c) => { if(await syncOperation('clubs','insert',c)) setClubs(p=>[...p, c]); }} onDeleteClub={async (id) => { if(await syncOperation('clubs','delete',null,id)) setClubs(p=>p.filter(x=>x.id!==id)); }} onUpdateClubSpaces={async (id, spaces) => { if(await syncOperation('clubs','update',{spaces},id)) setClubs(p=>p.map(x=>x.id===id?{...x, spaces}:x)); }} onUpdateFailureTypes={() => {}} />;
       
@@ -214,15 +213,15 @@ const App: React.FC = () => {
           </div>
           <div>
             <h3 className="text-sm font-black uppercase tracking-widest text-white">
-               {dbStatus === 'CONNECTED' ? 'Stockage Supabase Connecté' : 'Erreur de Connexion Cloud'}
+               {dbStatus === 'CONNECTED' ? 'Stockage Cloud Connecté' : 'Mode Démo / Erreur'}
             </h3>
             <p className="text-xs text-gray-400 font-medium">
-               {dbStatus === 'CONNECTED' ? 'Toutes les données et photos sont synchronisées en temps réel.' : 'L\'application fonctionne en mode limité (données démo).'}
+               {dbStatus === 'CONNECTED' ? 'Synchronisation Supabase active.' : 'Accès limité au stockage local temporaire.'}
             </p>
           </div>
         </div>
         {dbStatus !== 'CONNECTED' && (
-           <button onClick={fetchData} className="px-4 py-2 bg-red-500/20 text-red-400 text-[10px] font-black uppercase border border-red-500/40 rounded-lg hover:bg-red-500/30 transition">Réessayer</button>
+           <button onClick={fetchData} className="px-4 py-2 bg-red-500/20 text-red-400 text-[10px] font-black uppercase border border-red-500/40 rounded-lg hover:bg-red-500/30 transition">Réinitialiser Sync</button>
         )}
       </div>
       {renderContent()}
