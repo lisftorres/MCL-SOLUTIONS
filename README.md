@@ -15,6 +15,11 @@ View your app in AI Studio: https://ai.studio/apps/drive/1sYNSvpT8nUN1T-jxfK2FNC
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Start [OmniRoute](./OmniRoute) (passerelle IA) en local :
+   `npx omniroute` (dashboard sur `http://localhost:20128`)
+3. Dans le dashboard OmniRoute, connectez un fournisseur puis copiez votre clé d'API (Dashboard → Endpoints)
+4. Renseignez `VITE_OMNIROUTE_API_KEY` (et `VITE_OMNIROUTE_BASE_URL` si différent de `http://localhost:20128/v1`) dans [.env.local](.env.local)
+5. Run the app:
    `npm run dev`
+
+L'application appelle systématiquement OmniRoute (`services/omnirouteClient.ts`) pour ses requêtes IA, au lieu d'appeler un fournisseur directement.
