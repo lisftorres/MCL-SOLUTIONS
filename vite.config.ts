@@ -16,10 +16,11 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       // On définit les variables individuellement pour éviter d'écraser l'objet process.env global
-      // Cela permet à process.env.API_KEY de fonctionner pour le SDK Google (strictement requis)
-      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY || env.API_KEY || ""),
       'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || ""),
       'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || ""),
+      // Passerelle IA OmniRoute (remplace l'appel direct au SDK Google GenAI)
+      'process.env.OMNIROUTE_BASE_URL': JSON.stringify(env.VITE_OMNIROUTE_BASE_URL || env.OMNIROUTE_BASE_URL || "http://localhost:20128/v1"),
+      'process.env.OMNIROUTE_API_KEY': JSON.stringify(env.VITE_OMNIROUTE_API_KEY || env.OMNIROUTE_API_KEY || ""),
       'process.env.NODE_ENV': JSON.stringify(mode)
     }
   };
